@@ -1,0 +1,21 @@
+# Packed build output
+@AWARE/
+*.pbo
+*.bisign
+
+# Keep private signing keys out of source control
+*.biprivatekey
+.hemttprivatekey
+
+# Local logs and generated files
+*.rpt
+*.log
+*.tmp
+.hemttout/
+.hemtt/local
+releases/
+
+# Local tool downloads
+.tools/
+hemtt.exe
+*.zip

@@ -1,0 +1,11 @@
+name = "AWARE";
+picture = "";
+logo = "";
+logoOver = "";
+tooltip = "AWARE";
+tooltipOwned = "AWARE";
+overview = "AWARE Arma 3 mod.";
+author = "Brixie71";
+overviewPicture = "";
+overviewText = "AWARE Arma 3 mod.";
+overviewFootnote = "";
