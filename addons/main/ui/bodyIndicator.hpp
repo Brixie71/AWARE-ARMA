@@ -287,7 +287,7 @@ class AWARE_MedicalSuggestionExtension
             y = "safezoneY + 0.23 * safezoneH";
             w = "0.46";
             h = "0.034";
-            colorBackground[] = {0.12, 0.12, 0.12, 0.95};
+            colorBackground[] = {0.79, 0.48, 0.08, 0.95};
             SizeEx = "0.021 * safezoneH";
         };
 
@@ -314,7 +314,7 @@ class AWARE_MedicalSuggestionExtension
             y = "safezoneY + 0.268 * safezoneH";
             w = "0.109";
             h = "0.028";
-            colorBackground[] = {0.1, 0.24, 0.34, 0.95};
+            colorBackground[] = {0.08, 0.08, 0.08, 0.92};
             SizeEx = "0.0175 * safezoneH";
         };
 

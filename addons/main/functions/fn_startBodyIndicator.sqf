@@ -111,8 +111,20 @@ private _loopHandle = [] spawn {
                         _registeredDisplay displayRemoveEventHandler ["MouseButtonDown", _registeredMouseEh];
                     };
 
+                    private _registeredMouseUpEh = uiNamespace getVariable ["AWARE_MedicalSuggestionMouseUpEH", -1];
+                    if (!isNull _registeredDisplay && { _registeredMouseUpEh >= 0 }) then {
+                        _registeredDisplay displayRemoveEventHandler ["MouseButtonUp", _registeredMouseUpEh];
+                    };
+
+                    private _registeredMouseMoveEh = uiNamespace getVariable ["AWARE_MedicalSuggestionMouseMoveEH", -1];
+                    if (!isNull _registeredDisplay && { _registeredMouseMoveEh >= 0 }) then {
+                        _registeredDisplay displayRemoveEventHandler ["MouseMoving", _registeredMouseMoveEh];
+                    };
+
                     private _tabEh = _tabDisplay displayAddEventHandler ["KeyDown", {
                         params ["_display", "_dikCode"];
+
+                        if !(missionNamespace getVariable ["AWARE_medicalSuggestions_enabled", true]) exitWith { false };
 
                         private _tabIndex = [2, 3, 4, 5] find _dikCode;
                         if (_tabIndex > -1) then {
@@ -128,47 +140,86 @@ private _loopHandle = [] spawn {
                         params ["_display", "_button", "_mouseX", "_mouseY"];
 
                         if (_button != 0) exitWith { false };
+                        if !(missionNamespace getVariable ["AWARE_medicalSuggestions_enabled", true]) exitWith { false };
+                        if !(uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false]) exitWith { false };
 
-                        private _tabY = safeZoneY + (0.268 * safeZoneH);
-                        private _tabH = 0.028;
-                        if (_mouseY < _tabY || { _mouseY > (_tabY + _tabH) }) exitWith { false };
-
-                        private _tabXPositions = [
-                            safeZoneX + 0.024,
-                            safeZoneX + 0.139,
-                            safeZoneX + 0.254,
-                            safeZoneX + 0.369
-                        ];
-                        private _tabW = 0.109;
+                        private _tabRects = uiNamespace getVariable ["AWARE_MedicalSuggestionTabRects", []];
                         private _tabIndex = -1;
 
                         {
-                            if (_mouseX >= _x && { _mouseX <= (_x + _tabW) }) exitWith {
+                            _x params ["_tabX", "_tabY", "_tabW", "_tabH"];
+                            if (_mouseX >= _tabX && { _mouseX <= (_tabX + _tabW) } && { _mouseY >= _tabY } && { _mouseY <= (_tabY + _tabH) }) exitWith {
                                 _tabIndex = _forEachIndex;
                             };
-                        } forEach _tabXPositions;
+                        } forEach _tabRects;
 
                         if (_tabIndex > -1) then {
                             uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];
                             [true] call AWARE_fnc_renderMedicalSuggestions;
                             true
                         } else {
+                            private _canDrag = missionNamespace getVariable ["AWARE_medicalSuggestions_draggable", true];
+                            private _headerRect = uiNamespace getVariable ["AWARE_MedicalSuggestionHeaderRect", []];
+                            if (!_canDrag || { _headerRect isEqualTo [] }) exitWith { false };
+
+                            _headerRect params ["_panelX", "_panelY", "_panelW", "_panelH"];
+                            if (_mouseX >= _panelX && { _mouseX <= (_panelX + _panelW) } && { _mouseY >= _panelY } && { _mouseY <= (_panelY + _panelH) }) then {
+                                uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", true];
+                                true
+                            } else {
+                                false
+                            };
+                        };
+                    }];
+
+                    private _mouseUpEh = _tabDisplay displayAddEventHandler ["MouseButtonUp", {
+                        params ["_display", "_button"];
+
+                        if (_button == 0) then {
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", false];
+                        };
+
+                        false
+                    }];
+
+                    private _mouseMoveEh = _tabDisplay displayAddEventHandler ["MouseMoving", {
+                        params ["_display", "_deltaX", "_deltaY"];
+
+                        if !(uiNamespace getVariable ["AWARE_MedicalSuggestionDragging", false]) exitWith { false };
+                        if !(missionNamespace getVariable ["AWARE_medicalSuggestions_draggable", true]) exitWith {
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", false];
                             false
                         };
+
+                        private _rect = uiNamespace getVariable ["AWARE_MedicalSuggestionPanelRect", [safeZoneX + 0.02, safeZoneY + (0.23 * safeZoneH), 0.46, 0.58 * safeZoneH]];
+                        _rect params ["_panelX", "_panelY", "_panelW", "_panelH"];
+
+                        private _nextX = ((_panelX + _deltaX) max safeZoneX) min (safeZoneX + safeZoneW - _panelW);
+                        private _nextY = ((_panelY + _deltaY) max safeZoneY) min (safeZoneY + safeZoneH - _panelH);
+
+                        uiNamespace setVariable ["AWARE_MedicalSuggestionPosition", [_nextX, _nextY]];
+                        [true] call AWARE_fnc_renderMedicalSuggestions;
+                        true
                     }];
 
                     uiNamespace setVariable ["AWARE_MedicalSuggestionTabDisplay", _tabDisplay];
                     uiNamespace setVariable ["AWARE_MedicalSuggestionTabEH", _tabEh];
                     uiNamespace setVariable ["AWARE_MedicalSuggestionTabMouseEH", _tabMouseEh];
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionMouseUpEH", _mouseUpEh];
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionMouseMoveEH", _mouseMoveEh];
                 };
             };
 
-            if (_isMedicalMenuOpen != _isSuggestionVisible) then {
-                uiNamespace setVariable ["AWARE_MedicalSuggestionsVisible", _isMedicalMenuOpen];
-                if (_isMedicalMenuOpen) then {
+            private _suggestionsEnabled = missionNamespace getVariable ["AWARE_medicalSuggestions_enabled", true];
+            private _autoShowSuggestions = missionNamespace getVariable ["AWARE_medicalSuggestions_autoShow", true];
+            private _shouldShowSuggestions = _suggestionsEnabled && { _autoShowSuggestions } && { _isMedicalMenuOpen };
+
+            if (_shouldShowSuggestions != _isSuggestionVisible) then {
+                uiNamespace setVariable ["AWARE_MedicalSuggestionsVisible", _shouldShowSuggestions];
+                if (_shouldShowSuggestions) then {
                     uiNamespace setVariable ["AWARE_MedicalSuggestionTab", 0];
                 };
-                [_isMedicalMenuOpen] call AWARE_fnc_renderMedicalSuggestions;
+                [_shouldShowSuggestions] call AWARE_fnc_renderMedicalSuggestions;
             };
 
             uiSleep 0.15;

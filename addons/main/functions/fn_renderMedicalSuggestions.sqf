@@ -12,9 +12,13 @@ disableSerialization;
 private _display = uiNamespace getVariable ["AWARE_MedicalSuggestionExtension", displayNull];
 if (isNull _display) exitWith {};
 
+private _isEnabled = missionNamespace getVariable ["AWARE_medicalSuggestions_enabled", true];
 private _isVisible = uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false];
+if (!_isEnabled) then {
+    _isVisible = false;
+};
 if (_forceVisible isEqualType true) then {
-    _isVisible = _forceVisible;
+    _isVisible = _forceVisible && { _isEnabled };
     uiNamespace setVariable ["AWARE_MedicalSuggestionsVisible", _isVisible];
 };
 
@@ -36,7 +40,55 @@ private _tabControls = [
 
 if (isNull _backgroundControl || { isNull _headerControl } || { isNull _scrollGroup } || { isNull _bodyControl } || { isNull _hintControl }) exitWith {};
 
+private _scale = missionNamespace getVariable ["AWARE_medicalSuggestions_scale", 1];
+_scale = (_scale max 0.85) min 1.25;
+
+private _defaultPosition = [safeZoneX + 0.02, safeZoneY + (0.23 * safeZoneH)];
+private _panelPosition = uiNamespace getVariable ["AWARE_MedicalSuggestionPosition", _defaultPosition];
+if !(_panelPosition isEqualType []) then {
+    _panelPosition = _defaultPosition;
+};
+
+private _panelX = _panelPosition param [0, _defaultPosition select 0];
+private _panelY = _panelPosition param [1, _defaultPosition select 1];
+private _panelW = 0.46 * _scale;
+private _panelH = 0.58 * safeZoneH * _scale;
+private _padX = 0.004 * _scale;
+private _headerH = 0.034 * _scale;
+private _tabGap = 0.006 * _scale;
+private _tabY = _panelY + (0.038 * safeZoneH * _scale);
+private _tabH = 0.028 * _scale;
+private _contentX = _panelX + _padX;
+private _contentY = _panelY + (0.072 * safeZoneH * _scale);
+private _contentW = _panelW - (2 * _padX);
+private _contentH = _panelH - (_contentY - _panelY) - (0.006 * safeZoneH * _scale);
+private _tabW = (_contentW - (3 * _tabGap)) / 4;
+
+_backgroundControl ctrlSetPosition [_panelX, _panelY, _panelW, _panelH];
+_backgroundControl ctrlCommit 0;
+_headerControl ctrlSetPosition [_panelX, _panelY, _panelW, _headerH];
+_headerControl ctrlCommit 0;
+_scrollGroup ctrlSetPosition [_contentX, _contentY, _contentW, _contentH];
+_scrollGroup ctrlCommit 0;
+
+private _tabRects = [];
+{
+    if (!isNull _x) then {
+        private _tabX = _contentX + (_forEachIndex * (_tabW + _tabGap));
+        _x ctrlSetPosition [_tabX, _tabY, _tabW, _tabH];
+        _x ctrlCommit 0;
+        _tabRects pushBack [_tabX, _tabY, _tabW, _tabH];
+    } else {
+        _tabRects pushBack [0, 0, 0, 0];
+    };
+} forEach _tabControls;
+
+uiNamespace setVariable ["AWARE_MedicalSuggestionPanelRect", [_panelX, _panelY, _panelW, _panelH]];
+uiNamespace setVariable ["AWARE_MedicalSuggestionHeaderRect", [_panelX, _panelY, _panelW, _headerH]];
+uiNamespace setVariable ["AWARE_MedicalSuggestionTabRects", _tabRects];
+
 if (!_isVisible) exitWith {
+    uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", false];
     _backgroundControl ctrlShow false;
     _headerControl ctrlShow false;
     _scrollGroup ctrlShow false;
@@ -71,7 +123,7 @@ _activeTab = (_activeTab max 0) min 3;
 {
     if (!isNull _x) then {
         if (_forEachIndex == _activeTab) then {
-            _x ctrlSetBackgroundColor [0.12, 0.42, 0.58, 0.98];
+            _x ctrlSetBackgroundColor [0.79, 0.48, 0.08, 0.98];
         } else {
             _x ctrlSetBackgroundColor [0.08, 0.08, 0.08, 0.9];
         };
@@ -85,6 +137,6 @@ if !(_lines isEqualType []) then {
 };
 
 private _bodyHeight = (((count _lines) max 1) * 0.044 * safeZoneH) + (0.04 * safeZoneH);
-_bodyControl ctrlSetPosition [0, 0, 0.434, _bodyHeight];
+_bodyControl ctrlSetPosition [0, 0, _contentW - (0.018 * _scale), _bodyHeight];
 _bodyControl ctrlCommit 0;
 _bodyControl ctrlSetStructuredText parseText (_lines joinString "<br/>");

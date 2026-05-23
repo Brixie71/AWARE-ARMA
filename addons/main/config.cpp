@@ -6,7 +6,7 @@ class CfgPatches
         author = "Brixie71";
         url = "";
         requiredVersion = 2.14;
-        requiredAddons[] = {"A3_Functions_F"};
+        requiredAddons[] = {"A3_Functions_F", "cba_settings"};
         units[] = {};
         weapons[] = {};
     };
@@ -37,6 +37,10 @@ class CfgFunctions
             class onBodyPartHoverExit {};
             class getSuggestedMedicalProcedures {};
             class renderMedicalSuggestions {};
+            class registerSettings
+            {
+                preInit = 1;
+            };
         };
     };
 };
