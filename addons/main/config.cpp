@@ -28,6 +28,20 @@ class CfgFunctions
             };
 
             class hello {};
+            class vrHello {};
+            class getBodyPartDamage {};
+            class getBodyPartStatus {};
+            class startBodyIndicator {};
+            class updateBodyIndicator {};
+            class onBodyPartHover {};
+            class onBodyPartHoverExit {};
+            class getSuggestedMedicalProcedures {};
+            class renderMedicalSuggestions {};
         };
     };
+};
+
+class RscTitles
+{
+    #include "ui\bodyIndicator.hpp"
 };

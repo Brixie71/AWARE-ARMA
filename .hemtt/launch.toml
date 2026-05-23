@@ -5,10 +5,24 @@ parameters = [
     "-showScriptErrors",
 ]
 
+[ace]
+extends = "default"
+workshop = [
+    "450814997",
+    "463939057",
+]
+
 [vr]
 extends = "default"
 parameters = [
     "-init=playMission['','\\x\\aware\\addons\\main\\missions\\HelloWorld.VR']",
+]
+
+[vr_ace]
+extends = "vr"
+workshop = [
+    "450814997",
+    "463939057",
 ]
 
 [eden]

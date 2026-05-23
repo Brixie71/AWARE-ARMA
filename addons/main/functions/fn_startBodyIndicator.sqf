@@ -1,0 +1,179 @@
+/*
+    Function: AWARE_fnc_startBodyIndicator
+    Starts the client-side HUD loop for body part indicators.
+*/
+
+if (!hasInterface) exitWith {};
+
+private _runningHandle = uiNamespace getVariable ["AWARE_bodyIndicatorLoop", scriptNull];
+if (!isNull _runningHandle && { !scriptDone _runningHandle }) exitWith {};
+
+private _loopHandle = [] spawn {
+    disableSerialization;
+    waitUntil { !isNull findDisplay 46 };
+
+    private _bodyHudLayer = ["AWARE_BodyHudLayer"] call BIS_fnc_rscLayer;
+    private _medicalExtLayer = ["AWARE_MedicalExtLayer"] call BIS_fnc_rscLayer;
+
+    while { true } do {
+        if (isNull player) then {
+            uiSleep 0.25;
+        } else {
+            private _display = uiNamespace getVariable ["AWARE_BodyIndicator", displayNull];
+            if (isNull _display) then {
+                _bodyHudLayer cutRsc ["AWARE_BodyIndicator", "PLAIN"];
+                _display = uiNamespace getVariable ["AWARE_BodyIndicator", displayNull];
+                if (!isNull _display) then {
+                    private _dropdownControl = _display displayCtrl 5110;
+                    if (!isNull _dropdownControl) then {
+                        _dropdownControl ctrlShow false;
+                    };
+
+                    {
+                        private _rowControl = _display displayCtrl _x;
+                        if (!isNull _rowControl) then {
+                            _rowControl ctrlShow false;
+                        };
+                    } forEach [5111, 5112, 5113, 5114, 5115, 5116, 5117, 5118];
+
+                    private _bodyGroup = _display displayCtrl 5099;
+                    {
+                        private _statusControl = if (!isNull _bodyGroup) then {
+                            _bodyGroup controlsGroupCtrl _x
+                        } else {
+                            _display displayCtrl _x
+                        };
+                        if (!isNull _statusControl) then {
+                            _statusControl ctrlShow false;
+                        };
+                    } forEach [5107, 5108];
+                };
+            };
+
+            private _extensionDisplay = uiNamespace getVariable ["AWARE_MedicalSuggestionExtension", displayNull];
+            if (isNull _extensionDisplay) then {
+                _medicalExtLayer cutRsc ["AWARE_MedicalSuggestionExtension", "PLAIN"];
+                _extensionDisplay = uiNamespace getVariable ["AWARE_MedicalSuggestionExtension", displayNull];
+                if (!isNull _extensionDisplay) then {
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionsVisible", false];
+                    [false] call AWARE_fnc_renderMedicalSuggestions;
+                };
+            };
+
+            if (!isNull _display) then {
+                private _isAlive = alive player;
+                private _isUnconscious = false;
+                if (_isAlive) then {
+                    _isUnconscious = (player getVariable ["ACE_isUnconscious", false]) || { lifeState player == "INCAPACITATED" };
+                };
+
+                private _bodyGroup = _display displayCtrl 5099;
+                private _deadControl = if (!isNull _bodyGroup) then {
+                    _bodyGroup controlsGroupCtrl 5107
+                } else {
+                    _display displayCtrl 5107
+                };
+                if (!isNull _deadControl) then {
+                    _deadControl ctrlShow (!_isAlive);
+                };
+
+                private _unconsciousControl = if (!isNull _bodyGroup) then {
+                    _bodyGroup controlsGroupCtrl 5108
+                } else {
+                    _display displayCtrl 5108
+                };
+                if (!isNull _unconsciousControl) then {
+                    _unconsciousControl ctrlShow (_isAlive && _isUnconscious);
+                };
+
+                if (_isAlive) then {
+                    [player, _display] call AWARE_fnc_updateBodyIndicator;
+                };
+            };
+
+            private _aceMedicalMenuDisplay = findDisplay 38580;
+            private _aceMedicalMenuDisplayNs = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
+            private _isMedicalMenuOpen = (!isNull _aceMedicalMenuDisplay) || { !isNull _aceMedicalMenuDisplayNs };
+            private _isSuggestionVisible = uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false];
+
+            private _tabDisplay = [_aceMedicalMenuDisplayNs, _aceMedicalMenuDisplay] select (!isNull _aceMedicalMenuDisplay);
+
+            if (!isNull _tabDisplay) then {
+                private _registeredDisplay = uiNamespace getVariable ["AWARE_MedicalSuggestionTabDisplay", displayNull];
+                if (_registeredDisplay isNotEqualTo _tabDisplay) then {
+                    private _registeredEh = uiNamespace getVariable ["AWARE_MedicalSuggestionTabEH", -1];
+                    if (!isNull _registeredDisplay && { _registeredEh >= 0 }) then {
+                        _registeredDisplay displayRemoveEventHandler ["KeyDown", _registeredEh];
+                    };
+
+                    private _registeredMouseEh = uiNamespace getVariable ["AWARE_MedicalSuggestionTabMouseEH", -1];
+                    if (!isNull _registeredDisplay && { _registeredMouseEh >= 0 }) then {
+                        _registeredDisplay displayRemoveEventHandler ["MouseButtonDown", _registeredMouseEh];
+                    };
+
+                    private _tabEh = _tabDisplay displayAddEventHandler ["KeyDown", {
+                        params ["_display", "_dikCode"];
+
+                        private _tabIndex = [2, 3, 4, 5] find _dikCode;
+                        if (_tabIndex > -1) then {
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];
+                            [true] call AWARE_fnc_renderMedicalSuggestions;
+                            true
+                        } else {
+                            false
+                        };
+                    }];
+
+                    private _tabMouseEh = _tabDisplay displayAddEventHandler ["MouseButtonDown", {
+                        params ["_display", "_button", "_mouseX", "_mouseY"];
+
+                        if (_button != 0) exitWith { false };
+
+                        private _tabY = safeZoneY + (0.268 * safeZoneH);
+                        private _tabH = 0.028;
+                        if (_mouseY < _tabY || { _mouseY > (_tabY + _tabH) }) exitWith { false };
+
+                        private _tabXPositions = [
+                            safeZoneX + 0.024,
+                            safeZoneX + 0.139,
+                            safeZoneX + 0.254,
+                            safeZoneX + 0.369
+                        ];
+                        private _tabW = 0.109;
+                        private _tabIndex = -1;
+
+                        {
+                            if (_mouseX >= _x && { _mouseX <= (_x + _tabW) }) exitWith {
+                                _tabIndex = _forEachIndex;
+                            };
+                        } forEach _tabXPositions;
+
+                        if (_tabIndex > -1) then {
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];
+                            [true] call AWARE_fnc_renderMedicalSuggestions;
+                            true
+                        } else {
+                            false
+                        };
+                    }];
+
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionTabDisplay", _tabDisplay];
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionTabEH", _tabEh];
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionTabMouseEH", _tabMouseEh];
+                };
+            };
+
+            if (_isMedicalMenuOpen != _isSuggestionVisible) then {
+                uiNamespace setVariable ["AWARE_MedicalSuggestionsVisible", _isMedicalMenuOpen];
+                if (_isMedicalMenuOpen) then {
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionTab", 0];
+                };
+                [_isMedicalMenuOpen] call AWARE_fnc_renderMedicalSuggestions;
+            };
+
+            uiSleep 0.15;
+        };
+    };
+};
+
+uiNamespace setVariable ["AWARE_bodyIndicatorLoop", _loopHandle];

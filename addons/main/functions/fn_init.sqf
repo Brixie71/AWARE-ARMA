@@ -4,3 +4,4 @@
 */
 
 [] call AWARE_fnc_hello;
+[] call AWARE_fnc_startBodyIndicator;
