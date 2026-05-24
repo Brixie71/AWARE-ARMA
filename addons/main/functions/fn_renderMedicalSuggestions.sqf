@@ -136,7 +136,12 @@ if !(_lines isEqualType []) then {
     _lines = ["No suggestion data yet."];
 };
 
-private _bodyHeight = (((count _lines) max 1) * 0.044 * safeZoneH) + (0.04 * safeZoneH);
+private _lineHeight = 0.036 * safeZoneH;
+if (_activeTab in [0, 1]) then {
+    _lineHeight = 0.033 * safeZoneH;
+};
+
+private _bodyHeight = (((count _lines) max 1) * _lineHeight) + (0.045 * safeZoneH);
 _bodyControl ctrlSetPosition [0, 0, _contentW - (0.018 * _scale), _bodyHeight];
 _bodyControl ctrlCommit 0;
 _bodyControl ctrlSetStructuredText parseText (_lines joinString "<br/>");

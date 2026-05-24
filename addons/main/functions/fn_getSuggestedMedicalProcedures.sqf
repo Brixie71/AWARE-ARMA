@@ -1,6 +1,6 @@
 /*
     Function: AWARE_fnc_getSuggestedMedicalProcedures
-    Builds tabbed KAT/ACE checklist suggestions from current patient state.
+    Builds tabbed checklist suggestions from current patient state.
 */
 
 params [
@@ -10,8 +10,8 @@ params [
 
 if (isNull _unit) exitWith {
     [
-        ["MARCH", ["<t color='#F0B45A'>NO PATIENT DATA</t>", "[ ] Reopen medical menu after selecting patient."]],
-        ["BODY", ["[ ] No patient selected."]],
+        ["BODY", ["<t color='#F0B45A'>NO PATIENT DATA</t>", "[ ] No patient selected."]],
+        ["PRIORITY", ["[ ] Reopen medical menu after selecting patient."]],
         ["ITEMS", ["[ ] No item guidance available."]],
         ["RECHECK", ["[ ] Select patient and reopen medical menu."]]
     ]
@@ -20,19 +20,66 @@ if (isNull _unit) exitWith {
 private _isAceLoaded = isClass (configFile >> "CfgPatches" >> "ace_medical");
 if (!_isAceLoaded) exitWith {
     [
-        ["MARCH", ["<t color='#F0B45A'>MEDICAL SYSTEM</t>", "[ ] ACE/KAT medical not detected.", "[ ] Follow your unit treatment SOP."]],
-        ["BODY", ["[ ] No ACE body-state data."]],
+        ["BODY", ["<t color='#F0B45A'>MEDICAL SYSTEM</t>", "[ ] No advanced body-state data."]],
+        ["PRIORITY", ["[ ] Advanced medical data not detected.", "[ ] Follow your unit treatment SOP."]],
         ["ITEMS", ["[ ] Use unit standard medical kit."]],
         ["RECHECK", ["[ ] Reassess manually."]]
     ]
 };
 
-private _isKatLoaded = false;
-{
-    if (isClass (configFile >> "CfgPatches" >> _x)) exitWith {
-        _isKatLoaded = true;
+private _medic = missionNamespace getVariable ["ACE_player", player];
+if (isNull _medic) then {
+    _medic = player;
+};
+
+private _inventoryItems = (items _medic) + (assignedItems _medic);
+private _fnc_hasAnyItem = {
+    params ["_classCandidates"];
+
+    private _hasItem = false;
+    {
+        if (_x in _inventoryItems) exitWith {
+            _hasItem = true;
+        };
+    } forEach _classCandidates;
+
+    _hasItem
+};
+
+private _fnc_addRequirement = {
+    params ["_requirements", "_displayName", "_classCandidates"];
+
+    private _existingIndex = _requirements findIf { ((_x param [0, ""]) isEqualTo _displayName) };
+    if (_existingIndex < 0) then {
+        _requirements pushBack [_displayName, _classCandidates];
     };
-} forEach ["kat_main", "KAT_main", "kat_airway", "kat_breathing", "kat_circulation", "kat_pharma"];
+};
+
+private _fnc_splitRequirements = {
+    params ["_requirements"];
+
+    private _available = [];
+    private _missing = [];
+
+    {
+        _x params ["_displayName", "_classCandidates"];
+        if ([_classCandidates] call _fnc_hasAnyItem) then {
+            _available pushBack _displayName;
+        } else {
+            _missing pushBack _displayName;
+        };
+    } forEach _requirements;
+
+    [_available, _missing]
+};
+
+private _fnc_addMissingLines = {
+    params ["_lines", "_missing"];
+
+    {
+        _lines pushBack format ["      [ ] <t color='#F06A5A'>Required: ""%1""</t>", _x];
+    } forEach _missing;
+};
 
 private _fnc_findPartState = {
     params ["_sourceLabel", "_statePool"];
@@ -52,81 +99,94 @@ private _fnc_partSummary = {
     private _hasTourniquet = _state param [4, false];
     private _openWoundsCount = _state param [6, 0];
 
-    private _status = "Stable";
-    switch (true) do {
-        case (_bleedRatio > 0.35): {
-            _status = "Heavy bleed";
-        };
-        case (_bleedRatio > 0.01 || { _openWoundsCount > 0 }): {
-            _status = "Bleeding";
-        };
-        case (_damageValue > 0.7): {
-            _status = "Severe trauma";
-        };
-        case (_damageValue > 0.35): {
-            _status = "Moderate trauma";
-        };
-        case (_damageValue > 0.01): {
-            _status = "Minor trauma";
-        };
-    };
-
-    if (_hasFracture) then {
-        _status = _status + ", fracture";
-    };
-    if (_hasTourniquet) then {
-        _status = _status + ", TQ on";
-    };
-    if (_openWoundsCount > 0) then {
-        _status = _status + format [", wounds x%1", _openWoundsCount];
-    };
-
-    private _items = [];
-    private _action = "Monitor and reassess.";
+    private _requirements = [];
+    private _actions = [];
+    private _statusParts = [];
 
     if (_bleedRatio > 0.35) then {
+        _statusParts pushBack "heavy bleeding";
         if (_partType in ["arm", "leg"]) then {
-            _items append ["Tourniquet", "Packing Bandage", "Elastic Bandage"];
-            _action = "TQ high/tight, pack, then bandage.";
-        } else {
-            _items append ["Packing Bandage", "Elastic Bandage"];
-            _action = "Pack wound and bandage until controlled.";
+            if (!_hasTourniquet) then {
+                [_requirements, "Tourniquet", ["ACE_tourniquet"]] call _fnc_addRequirement;
+                _actions pushBack "Apply tourniquet high and tight if bleeding is life-threatening.";
+            } else {
+                _actions pushBack "Confirm tourniquet is still controlling bleeding.";
+            };
         };
+        [_requirements, "Packing Bandage", ["ACE_packingBandage", "ACE_fieldDressing", "ACE_elasticBandage", "ACE_quikclot"]] call _fnc_addRequirement;
+        [_requirements, "Elastic Bandage", ["ACE_elasticBandage", "ACE_packingBandage", "ACE_fieldDressing", "ACE_quikclot"]] call _fnc_addRequirement;
+        _actions pushBack "Pack wound and bandage until bleeding is controlled.";
     } else {
         if (_bleedRatio > 0.01 || { _openWoundsCount > 0 }) then {
-            _items append ["Packing Bandage", "Elastic Bandage"];
-            _action = "Bandage until bleeding is controlled.";
+            _statusParts pushBack "bleeding";
+            [_requirements, "Packing Bandage", ["ACE_packingBandage", "ACE_fieldDressing", "ACE_elasticBandage", "ACE_quikclot"]] call _fnc_addRequirement;
+            [_requirements, "Elastic Bandage", ["ACE_elasticBandage", "ACE_packingBandage", "ACE_fieldDressing", "ACE_quikclot"]] call _fnc_addRequirement;
+            _actions pushBack "Bandage and recheck until bleeding stops.";
         };
     };
 
-    if (_partType isEqualTo "torso" && { _damageValue > 0.01 || _bleedRatio > 0.01 }) then {
-        _items pushBack "Chest Seal";
-        _action = _action + " Seal chest wounds; check breathing.";
+    if (_openWoundsCount > 0) then {
+        _statusParts pushBack format ["open wound/gunshot x%1", _openWoundsCount];
+    };
+
+    if (_damageValue > 0.7) then {
+        _statusParts pushBack "severe trauma";
+    } else {
         if (_damageValue > 0.35) then {
-            _items pushBack "Needle Decompression";
+            _statusParts pushBack "moderate trauma";
+        } else {
+            if (_damageValue > 0.01) then {
+                _statusParts pushBack "minor trauma";
+            };
+        };
+    };
+
+    if (_partType isEqualTo "torso" && { _openWoundsCount > 0 || { _bleedRatio > 0.01 } || { _damageValue > 0.35 } }) then {
+        [_requirements, "Chest Seal", ["kat_chestSeal"]] call _fnc_addRequirement;
+        _actions pushBack "Seal penetrating chest wounds and reassess breathing.";
+        if (_damageValue > 0.35) then {
+            [_requirements, "Needle Decompression Kit", ["kat_ncdKit", "kat_aatKit"]] call _fnc_addRequirement;
+            _actions pushBack "If breathing worsens, assess for decompression per SOP.";
         };
     };
 
     if (_partType isEqualTo "head" && { _isUnconscious }) then {
-        _items pushBack "NPA / King LT";
-        _action = "Secure airway and monitor breathing.";
+        [_requirements, "Airway Adjunct", ["kat_guedel", "kat_larynx"]] call _fnc_addRequirement;
+        _actions pushBack "Open airway and monitor respirations.";
     };
 
     if (_hasFracture) then {
-        _items pushBack "Splint";
-        _action = _action + " Splint after bleeding control.";
+        _statusParts pushBack "fracture";
+        [_requirements, "Splint", ["ACE_splint"]] call _fnc_addRequirement;
+        _actions pushBack "Splint after bleeding control.";
     };
 
-    if (_items isEqualTo []) then {
-        _items pushBack "Monitor";
+    if (_hasTourniquet) then {
+        _statusParts pushBack "tourniquet applied";
     };
 
-    private _uniqueItems = [];
-    {
-        if !(_x in _uniqueItems) then {
-            _uniqueItems pushBack _x;
-        };
-    } forEach _items;
+    private _severity = (_bleedRatio * 5) + (_damageValue * 3) + (_openWoundsCount * 0.35);
+    if (_hasFracture) then {
+        _severity = _severity + 1;
+    };
+    if (_hasTourniquet) then {
+        _severity = _severity + 0.35;
+    };
+
+    private _isInjured = _severity > 0.05;
+    private _status = "stable";
+    if (_statusParts isNotEqualTo []) then {
+        _status = _statusParts joinString ", ";
+    };
+
+    private _action = "Monitor and reassess.";
+    if (_actions isNotEqualTo []) then {
+        _action = _actions joinString " ";
+    };
+    private _operations = +_actions;
+    if (_operations isEqualTo []) then {
+        _operations pushBack "Monitor and reassess.";
+    };
 
     private _priorityColor = "#9BE28F";
     if (_bleedRatio > 0.35 || { _damageValue > 0.7 }) then {
@@ -140,12 +200,17 @@ private _fnc_partSummary = {
     [
         _displayName,
         _status,
-        _uniqueItems,
+        _requirements,
         _action,
         _priorityColor,
         _bleedRatio,
         _damageValue,
-        _hasFracture
+        _hasFracture,
+        _openWoundsCount,
+        _severity,
+        _hasTourniquet,
+        _isInjured,
+        _operations
     ]
 };
 
@@ -155,30 +220,33 @@ private _isLosingBlood = (_unit getVariable ["ace_medical_woundBleeding", 0]) > 
 private _bloodVolume = _unit getVariable ["ace_medical_bloodVolume", 6];
 private _painValue = (((_unit getVariable ["ace_medical_pain", 0]) - (_unit getVariable ["ace_medical_painSuppress", 0])) max 0) min 1;
 
+private _bloodRequirements = [];
 private _bloodStatus = "Normal";
-private _bloodItems = "Monitor vitals";
 private _bloodAction = "Reassess after each treatment.";
 switch (true) do {
     case (_bloodVolume < 3.6): {
         _bloodStatus = "Critical";
-        _bloodItems = "Blood, Plasma, IV/IO access";
-        _bloodAction = "Aggressive volume replacement after bleed control.";
+        [_bloodRequirements, "IV Fluid / Blood Product", ["ACE_bloodIV", "ACE_bloodIV_500", "ACE_bloodIV_250", "ACE_plasmaIV", "ACE_plasmaIV_500", "ACE_plasmaIV_250", "ACE_salineIV", "ACE_salineIV_500", "ACE_salineIV_250", "kat_bloodIV_O", "kat_bloodIV_A", "kat_bloodIV_B", "kat_bloodIV_AB"]] call _fnc_addRequirement;
+        _bloodAction = "Replace volume aggressively after active bleeding is controlled.";
     };
     case (_bloodVolume < 4.2): {
         _bloodStatus = "Severe loss";
-        _bloodItems = "Blood or Plasma, IV/IO access";
+        [_bloodRequirements, "IV Fluid / Blood Product", ["ACE_bloodIV", "ACE_bloodIV_500", "ACE_bloodIV_250", "ACE_plasmaIV", "ACE_plasmaIV_500", "ACE_plasmaIV_250", "ACE_salineIV", "ACE_salineIV_500", "ACE_salineIV_250", "kat_bloodIV_O", "kat_bloodIV_A", "kat_bloodIV_B", "kat_bloodIV_AB"]] call _fnc_addRequirement;
         _bloodAction = "Prioritize blood products and monitor pulse/BP.";
     };
     case (_bloodVolume < 5.1): {
         _bloodStatus = "Low";
-        _bloodItems = "Saline/Blood, IV access";
+        [_bloodRequirements, "IV Fluid / Blood Product", ["ACE_bloodIV", "ACE_bloodIV_500", "ACE_bloodIV_250", "ACE_plasmaIV", "ACE_plasmaIV_500", "ACE_plasmaIV_250", "ACE_salineIV", "ACE_salineIV_500", "ACE_salineIV_250", "kat_bloodIV_O", "kat_bloodIV_A", "kat_bloodIV_B", "kat_bloodIV_AB"]] call _fnc_addRequirement;
         _bloodAction = "Start fluids after active bleeding is controlled.";
     };
 };
 
-private _partRows = [];
+private _injuryRowsForSort = [];
 {
-    _partRows pushBack ([_x select 0, _x select 1, _x select 2, _partStates, _isUnconscious] call _fnc_partSummary);
+    private _row = [_x select 0, _x select 1, _x select 2, _partStates, _isUnconscious] call _fnc_partSummary;
+    if (_row param [11, false]) then {
+        _injuryRowsForSort pushBack [(_row param [9, 0]), _row];
+    };
 } forEach [
     ["Head", "Head", "head"],
     ["Torso", "Torso", "torso"],
@@ -188,57 +256,95 @@ private _partRows = [];
     ["Right Foot", "Right Leg", "leg"]
 ];
 
-private _marchLines = [
-    "<t size='1.12' color='#9AD7FF'>IMMEDIATE CHECKLIST</t>",
-    "<t color='#F0B45A'>[ ] M</t> Massive bleeding: stop life-threatening bleeds.",
-    "<t color='#F0B45A'>[ ] A</t> Airway: check responsiveness and obstruction.",
-    "<t color='#F0B45A'>[ ] R</t> Respiration: inspect torso/chest and breathing.",
-    "<t color='#F0B45A'>[ ] C</t> Circulation: pulse/BP and blood volume.",
-    "<t color='#F0B45A'>[ ] H</t> Head/Hypothermia: protect, reassess, prevent relapse."
-];
+_injuryRowsForSort sort false;
 
-if (_isKatLoaded) then {
-    _marchLines pushBack "<t color='#8FD8C8'>[ ] KAT</t> Use airway, breathing, and circulation extensions.";
-} else {
-    _marchLines pushBack "<t color='#D8DEE9'>[ ] ACE fallback</t> KAT actions may not be available.";
-};
-if (_isUnconscious) then {
-    _marchLines pushBack "[ ] Airway priority: NPA / King LT and monitor breathing.";
-};
-if (_isCardiacArrest) then {
-    _marchLines pushBack "[ ] Cardiac arrest: CPR plus monitor/drug protocol.";
-};
+private _injuredPartRows = [];
+{
+    _injuredPartRows pushBack (_x select 1);
+} forEach _injuryRowsForSort;
+
+private _marchLines = [
+    _unit,
+    _injuredPartRows,
+    _bloodStatus,
+    _bloodAction,
+    _bloodRequirements,
+    _isUnconscious,
+    _isCardiacArrest,
+    _isLosingBlood,
+    _inventoryItems
+] call AWARE_fnc_getPriorityMedicalWorkflow;
 
 private _bodyLines = ["<t size='1.12' color='#9AD7FF'>BODY PART CHECKLIST</t>"];
-{
-    _x params ["_name", "_status", "_items", "_action", "_color"];
-    _bodyLines pushBack format ["<t color='%1'>[ ] %2</t> %3", _color, toUpper _name, _status];
-    _bodyLines pushBack format ["    - Action: %1", _action];
-} forEach _partRows;
+if (_injuredPartRows isEqualTo []) then {
+    _bodyLines pushBack "[ ] No wounded body parts currently need checklist actions.";
+} else {
+    {
+        _x params ["_name", "_status", "_requirements", "_action", "_color", "_bleedRatio", "_damageValue", "_hasFracture", "_openWoundsCount", "_severity", "_hasTourniquet", "_isInjured", "_operations"];
+        private _split = [_requirements] call _fnc_splitRequirements;
+        _split params ["_available", "_missing"];
 
-private _itemLines = [
-    "<t size='1.12' color='#9AD7FF'>ITEM SELECTION</t>",
-    format ["<t color='#F0B45A'>[ ] Blood:</t> %1. Items: %2.", _bloodStatus, _bloodItems],
-    format ["    - %1", _bloodAction]
-];
+        _bodyLines pushBack format ["<t align='left' color='%1'>[ ] %2</t>", _color, toUpper _name];
+        _bodyLines pushBack format ["  - Status: %1", _status];
+        _bodyLines pushBack "  - Medical operations:";
+        {
+            _bodyLines pushBack format ["      [ ] %1", _x];
+        } forEach _operations;
+        if (_available isNotEqualTo []) then {
+            _bodyLines pushBack "  - Use from kit:";
+            {
+                _bodyLines pushBack format ["      [ ] %1", _x];
+            } forEach _available;
+        };
+        [_bodyLines, _missing] call _fnc_addMissingLines;
+    } forEach _injuredPartRows;
+};
+
+private _itemLines = ["<t size='1.12' color='#9AD7FF'>ITEMS AVAILABLE / REQUIRED</t>"];
+private _hasItemGuidance = false;
+
+if (_bloodRequirements isNotEqualTo []) then {
+    private _split = [_bloodRequirements] call _fnc_splitRequirements;
+    _split params ["_available", "_missing"];
+    _itemLines pushBack format ["<t color='#F0B45A'>[ ] Blood volume:</t> %1", _bloodStatus];
+    _itemLines pushBack format ["    - Procedure: %1", _bloodAction];
+    if (_available isNotEqualTo []) then {
+        _itemLines pushBack format ["    - Use from kit: %1", _available joinString ", "];
+    };
+    [_itemLines, _missing] call _fnc_addMissingLines;
+    _hasItemGuidance = true;
+};
 
 if (_isLosingBlood) then {
     _itemLines pushBack "[ ] Active bleed: control bleeding before volume replacement.";
+    _hasItemGuidance = true;
 };
 if (_painValue > 0.4) then {
-    _itemLines pushBack "[ ] Pain: treat after life threats are stable.";
+    _itemLines pushBack "[ ] Pain: treat per SOP after life threats are stable.";
+    _hasItemGuidance = true;
 };
 
 {
-    _x params ["_name", "_status", "_items", "_action", "_color"];
-    if (_items isNotEqualTo ["Monitor"]) then {
-        _itemLines pushBack format ["<t color='%1'>[ ] %2:</t> %3", _color, _name, _items joinString ", "];
+    _x params ["_name", "_status", "_requirements", "_action", "_color"];
+    if (_requirements isNotEqualTo []) then {
+        private _split = [_requirements] call _fnc_splitRequirements;
+        _split params ["_available", "_missing"];
+        _itemLines pushBack format ["<t color='%1'>[ ] %2:</t> %3", _color, _name, _status];
+        if (_available isNotEqualTo []) then {
+            _itemLines pushBack format ["    - Use from kit: %1", _available joinString ", "];
+        };
+        [_itemLines, _missing] call _fnc_addMissingLines;
+        _hasItemGuidance = true;
     };
-} forEach _partRows;
+} forEach _injuredPartRows;
+
+if (!_hasItemGuidance) then {
+    _itemLines pushBack "[ ] No specific medical item requirement detected from current injuries.";
+};
 
 private _recheckLines = [
     "<t size='1.12' color='#9AD7FF'>REASSESSMENT</t>",
-    "[ ] Recheck bleeding after every bandage or TQ.",
+    "[ ] Recheck bleeding after every bandage or tourniquet.",
     "[ ] Recheck airway and breathing after torso/head treatment.",
     "[ ] Recheck pulse/BP after fluids or blood.",
     "[ ] Splints: confirm pain reduction and limb pulse.",
@@ -247,8 +353,8 @@ private _recheckLines = [
 ];
 
 [
-    ["MARCH", _marchLines],
     ["BODY", _bodyLines],
+    ["PRIORITY", _marchLines],
     ["ITEMS", _itemLines],
     ["RECHECK", _recheckLines]
 ]

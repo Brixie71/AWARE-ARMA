@@ -20,11 +20,19 @@ if (_canUseAce) then {
     if (_bodyPartDamage isEqualType [] && { count _bodyPartDamage > _aceBodyPartIndex }) then {
         private _fractures = _unit getVariable ["ace_medical_fractures", [0, 0, 0, 0, 0, 0]];
         private _tourniquets = _unit getVariable ["ace_medical_tourniquets", [0, 0, 0, 0, 0, 0]];
-        private _openWoundsContainer = _unit getVariable ["ace_medical_openWounds", createHashMap];
         private _openWounds = [];
 
-        if (_openWoundsContainer isEqualType createHashMap) then {
-            _openWounds = _openWoundsContainer getOrDefault [toLower _aceBodyPart, []];
+        if (!isNil "ace_medical_fnc_getOpenWounds") then {
+            _openWounds = [_unit, _aceBodyPart] call ace_medical_fnc_getOpenWounds;
+        } else {
+            private _openWoundsContainer = _unit getVariable ["ace_medical_openWounds", createHashMap];
+            if (_openWoundsContainer isEqualType createHashMap) then {
+                _openWounds = _openWoundsContainer getOrDefault [toLower _aceBodyPart, []];
+            };
+        };
+
+        if !(_openWounds isEqualType []) then {
+            _openWounds = [];
         };
 
         private _traumaScore = (_bodyPartDamage param [_aceBodyPartIndex, 0]) max 0;

@@ -282,7 +282,7 @@ class AWARE_MedicalSuggestionExtension
         {
             idc = 5201;
             style = 2;
-            text = "AWARE KAT MEDICAL SUGGESTIONS";
+            text = "AWARE MEDICAL CHECKLIST";
             x = "safezoneX + 0.02";
             y = "safezoneY + 0.23 * safezoneH";
             w = "0.46";
@@ -309,7 +309,7 @@ class AWARE_MedicalSuggestionExtension
         {
             idc = 5204;
             style = 2;
-            text = "1 MARCH";
+            text = "1 BODY";
             x = "safezoneX + 0.024";
             y = "safezoneY + 0.268 * safezoneH";
             w = "0.109";
@@ -321,7 +321,7 @@ class AWARE_MedicalSuggestionExtension
         class AWARE_MedExtTab2 : AWARE_MedExtTab1
         {
             idc = 5205;
-            text = "2 BODY";
+            text = "2 PRIORITY";
             x = "safezoneX + 0.139";
         };
 

@@ -47,6 +47,8 @@ private _loopHandle = [] spawn {
                             _statusControl ctrlShow false;
                         };
                     } forEach [5107, 5108];
+
+                    [_display, false] call AWARE_fnc_setBodyIndicatorVisible;
                 };
             };
 
@@ -60,12 +62,37 @@ private _loopHandle = [] spawn {
                 };
             };
 
+            private _aceMedicalMenuDisplay = findDisplay 38580;
+            private _aceMedicalMenuDisplayNs = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
+            private _isMedicalMenuOpen = (!isNull _aceMedicalMenuDisplay) || { !isNull _aceMedicalMenuDisplayNs };
+            private _isSuggestionVisible = uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false];
+
             if (!isNull _display) then {
-                private _isAlive = alive player;
-                private _isUnconscious = false;
-                if (_isAlive) then {
-                    _isUnconscious = (player getVariable ["ACE_isUnconscious", false]) || { lifeState player == "INCAPACITATED" };
+                private _medicalTarget = [] call AWARE_fnc_getMedicalTarget;
+                if (isNull _medicalTarget) then {
+                    _medicalTarget = player;
                 };
+
+                private _previousMedicalTarget = uiNamespace getVariable ["AWARE_MedicalSuggestionTarget", objNull];
+                if (_previousMedicalTarget isNotEqualTo _medicalTarget) then {
+                    uiNamespace setVariable ["AWARE_MedicalSuggestionTarget", _medicalTarget];
+                    if (uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false]) then {
+                        uiNamespace setVariable ["AWARE_MedicalSuggestionTab", 0];
+                    };
+                };
+
+                private _lifeState = lifeState _medicalTarget;
+                private _isDead = (!alive _medicalTarget) || { _lifeState in ["DEAD", "DEAD-RESPAWN"] };
+                private _isUnconscious = !_isDead && {
+                    (_medicalTarget getVariable ["ACE_isUnconscious", false]) || { _lifeState == "INCAPACITATED" }
+                };
+
+                [_medicalTarget, _display] call AWARE_fnc_updateBodyIndicator;
+
+                private _bodyEnabled = missionNamespace getVariable ["AWARE_bodyIndicator_enabled", true];
+                private _bodyVisibility = missionNamespace getVariable ["AWARE_bodyIndicator_visibility", 0];
+                private _shouldShowBody = _bodyEnabled && { (_bodyVisibility isEqualTo 0) || { _isMedicalMenuOpen } };
+                [_display, _shouldShowBody] call AWARE_fnc_setBodyIndicatorVisible;
 
                 private _bodyGroup = _display displayCtrl 5099;
                 private _deadControl = if (!isNull _bodyGroup) then {
@@ -74,7 +101,7 @@ private _loopHandle = [] spawn {
                     _display displayCtrl 5107
                 };
                 if (!isNull _deadControl) then {
-                    _deadControl ctrlShow (!_isAlive);
+                    _deadControl ctrlShow (_shouldShowBody && { _isDead });
                 };
 
                 private _unconsciousControl = if (!isNull _bodyGroup) then {
@@ -83,18 +110,9 @@ private _loopHandle = [] spawn {
                     _display displayCtrl 5108
                 };
                 if (!isNull _unconsciousControl) then {
-                    _unconsciousControl ctrlShow (_isAlive && _isUnconscious);
-                };
-
-                if (_isAlive) then {
-                    [player, _display] call AWARE_fnc_updateBodyIndicator;
+                    _unconsciousControl ctrlShow (_shouldShowBody && { _isUnconscious });
                 };
             };
-
-            private _aceMedicalMenuDisplay = findDisplay 38580;
-            private _aceMedicalMenuDisplayNs = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
-            private _isMedicalMenuOpen = (!isNull _aceMedicalMenuDisplay) || { !isNull _aceMedicalMenuDisplayNs };
-            private _isSuggestionVisible = uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false];
 
             private _tabDisplay = [_aceMedicalMenuDisplayNs, _aceMedicalMenuDisplay] select (!isNull _aceMedicalMenuDisplay);
 
@@ -165,6 +183,8 @@ private _loopHandle = [] spawn {
                             _headerRect params ["_panelX", "_panelY", "_panelW", "_panelH"];
                             if (_mouseX >= _panelX && { _mouseX <= (_panelX + _panelW) } && { _mouseY >= _panelY } && { _mouseY <= (_panelY + _panelH) }) then {
                                 uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", true];
+                                uiNamespace setVariable ["AWARE_MedicalSuggestionDragStartMouse", [_mouseX, _mouseY]];
+                                uiNamespace setVariable ["AWARE_MedicalSuggestionDragStartPosition", [_panelX, _panelY]];
                                 true
                             } else {
                                 false
@@ -177,13 +197,15 @@ private _loopHandle = [] spawn {
 
                         if (_button == 0) then {
                             uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", false];
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionDragStartMouse", nil];
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionDragStartPosition", nil];
                         };
 
                         false
                     }];
 
                     private _mouseMoveEh = _tabDisplay displayAddEventHandler ["MouseMoving", {
-                        params ["_display", "_deltaX", "_deltaY"];
+                        params ["_display", "_mouseX", "_mouseY"];
 
                         if !(uiNamespace getVariable ["AWARE_MedicalSuggestionDragging", false]) exitWith { false };
                         if !(missionNamespace getVariable ["AWARE_medicalSuggestions_draggable", true]) exitWith {
@@ -194,8 +216,13 @@ private _loopHandle = [] spawn {
                         private _rect = uiNamespace getVariable ["AWARE_MedicalSuggestionPanelRect", [safeZoneX + 0.02, safeZoneY + (0.23 * safeZoneH), 0.46, 0.58 * safeZoneH]];
                         _rect params ["_panelX", "_panelY", "_panelW", "_panelH"];
 
-                        private _nextX = ((_panelX + _deltaX) max safeZoneX) min (safeZoneX + safeZoneW - _panelW);
-                        private _nextY = ((_panelY + _deltaY) max safeZoneY) min (safeZoneY + safeZoneH - _panelH);
+                        private _dragStartMouse = uiNamespace getVariable ["AWARE_MedicalSuggestionDragStartMouse", [_mouseX, _mouseY]];
+                        private _dragStartPosition = uiNamespace getVariable ["AWARE_MedicalSuggestionDragStartPosition", [_panelX, _panelY]];
+                        _dragStartMouse params ["_startMouseX", "_startMouseY"];
+                        _dragStartPosition params ["_startPanelX", "_startPanelY"];
+
+                        private _nextX = ((_startPanelX + (_mouseX - _startMouseX)) max safeZoneX) min (safeZoneX + safeZoneW - _panelW);
+                        private _nextY = ((_startPanelY + (_mouseY - _startMouseY)) max safeZoneY) min (safeZoneY + safeZoneH - _panelH);
 
                         uiNamespace setVariable ["AWARE_MedicalSuggestionPosition", [_nextX, _nextY]];
                         [true] call AWARE_fnc_renderMedicalSuggestions;

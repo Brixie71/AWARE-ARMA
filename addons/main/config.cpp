@@ -32,9 +32,12 @@ class CfgFunctions
             class getBodyPartDamage {};
             class getBodyPartStatus {};
             class startBodyIndicator {};
+            class setBodyIndicatorVisible {};
             class updateBodyIndicator {};
             class onBodyPartHover {};
             class onBodyPartHoverExit {};
+            class getMedicalTarget {};
+            class getPriorityMedicalWorkflow {};
             class getSuggestedMedicalProcedures {};
             class renderMedicalSuggestions {};
             class registerSettings
