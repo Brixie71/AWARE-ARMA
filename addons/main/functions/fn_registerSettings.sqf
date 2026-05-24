@@ -8,8 +8,8 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_bodyIndicator_enabled",
     "CHECKBOX",
-    ["Enable AWARE BODY", "Shows or hides the AWARE BODY status panel."],
-    ["AWARE", "Body Indicator"],
+    [localize "STR_AWARE_SETTING_ENABLE_BODY", localize "STR_AWARE_SETTING_ENABLE_BODY_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_BODY_INDICATOR"],
     true,
     0,
     {
@@ -28,9 +28,9 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_bodyIndicator_visibility",
     "LIST",
-    ["AWARE BODY Visibility", "Controls whether AWARE BODY is always visible or only visible while the medical menu is open."],
-    ["AWARE", "Body Indicator"],
-    [[0, 1], ["Always On", "Medical Menu Only"], 0],
+    [localize "STR_AWARE_SETTING_BODY_VISIBILITY", localize "STR_AWARE_SETTING_BODY_VISIBILITY_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_BODY_INDICATOR"],
+    [[0, 1], [localize "STR_AWARE_OPTION_ALWAYS_ON", localize "STR_AWARE_OPTION_MEDICAL_MENU_ONLY"], 0],
     0,
     {},
     false
@@ -39,8 +39,8 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_medicalSuggestions_enabled",
     "CHECKBOX",
-    ["Enable Checklist", "Shows the AWARE medical checklist panel with the medical menu."],
-    ["AWARE", "Medical Checklist"],
+    [localize "STR_AWARE_SETTING_ENABLE_CHECKLIST", localize "STR_AWARE_SETTING_ENABLE_CHECKLIST_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_MEDICAL_CHECKLIST"],
     true,
     0,
     {
@@ -57,8 +57,8 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_medicalSuggestions_autoShow",
     "CHECKBOX",
-    ["Auto Show With Medical Menu", "Automatically opens the checklist panel when the medical menu opens."],
-    ["AWARE", "Medical Checklist"],
+    [localize "STR_AWARE_SETTING_AUTO_SHOW", localize "STR_AWARE_SETTING_AUTO_SHOW_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_MEDICAL_CHECKLIST"],
     true,
     0,
     {},
@@ -68,8 +68,8 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_medicalSuggestions_draggable",
     "CHECKBOX",
-    ["Allow Dragging", "Allows the checklist panel to be dragged while the medical menu is open."],
-    ["AWARE", "Medical Checklist"],
+    [localize "STR_AWARE_SETTING_ALLOW_DRAGGING", localize "STR_AWARE_SETTING_ALLOW_DRAGGING_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_MEDICAL_CHECKLIST"],
     true,
     0,
     {},
@@ -79,8 +79,8 @@ if (isNil "CBA_fnc_addSetting") exitWith {};
 [
     "AWARE_medicalSuggestions_scale",
     "SLIDER",
-    ["UI Scale", "Scales the checklist panel size."],
-    ["AWARE", "Medical Checklist"],
+    [localize "STR_AWARE_SETTING_UI_SCALE", localize "STR_AWARE_SETTING_UI_SCALE_DESC"],
+    ["AWARE", localize "STR_AWARE_CATEGORY_MEDICAL_CHECKLIST"],
     [0.85, 1.25, 1, 2],
     0,
     {

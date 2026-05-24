@@ -33,7 +33,7 @@ private _blockGap = 0.006 * safeZoneH;
     _x params ["_label", "_idc", "_hitpoints", "_aceBodyPart", "_aceIndex"];
 
     private _status = [_unit, _hitpoints, _aceBodyPart, _aceIndex] call AWARE_fnc_getBodyPartStatus;
-    _status params ["_damageValue", "_bleedRatio", "_hasFracture", "_hasTourniquet", "_usedAce", "_openWoundsCount"];
+    _status params ["_damageValue", "_bleedRatio", "_hasFracture", "_hasTourniquet", "_usedAce", "_openWoundsCount", "_woundDetails"];
     private _isBleeding = _bleedRatio > 0.01;
     private _control = if (!isNull _bodyGroup) then {
         _bodyGroup controlsGroupCtrl _idc
@@ -142,7 +142,7 @@ private _blockGap = 0.006 * safeZoneH;
     } forEach _activeIndicators;
 
     _detailsByIdc set [str _idc, _detailRows];
-    _partStates pushBack [_label, _damageValue, _bleedRatio, _hasFracture, _hasTourniquet, _usedAce, _openWoundsCount];
+    _partStates pushBack [_label, _damageValue, _bleedRatio, _hasFracture, _hasTourniquet, _usedAce, _openWoundsCount, _woundDetails];
 
     if !(isNull _control) then {
         private _blockHeight = ((count _displayLines) * _lineHeight) + (2 * _blockPadding);

@@ -101,7 +101,7 @@ class AWARE_BodyIndicator
         {
             idc = 5100;
             style = 2;
-            text = "AWARE BODY";
+            text = "$STR_AWARE_BODY_TITLE";
             x = "safezoneX + safezoneW - 0.355";
             y = "safezoneY + 0.28 * safezoneH";
             w = "0.325";
@@ -282,7 +282,7 @@ class AWARE_MedicalSuggestionExtension
         {
             idc = 5201;
             style = 2;
-            text = "AWARE MEDICAL CHECKLIST";
+            text = "$STR_AWARE_MEDICAL_CHECKLIST";
             x = "safezoneX + 0.02";
             y = "safezoneY + 0.23 * safezoneH";
             w = "0.46";
@@ -309,7 +309,7 @@ class AWARE_MedicalSuggestionExtension
         {
             idc = 5204;
             style = 2;
-            text = "1 BODY";
+            text = "$STR_AWARE_TAB_BODY";
             x = "safezoneX + 0.024";
             y = "safezoneY + 0.268 * safezoneH";
             w = "0.109";
@@ -321,22 +321,42 @@ class AWARE_MedicalSuggestionExtension
         class AWARE_MedExtTab2 : AWARE_MedExtTab1
         {
             idc = 5205;
-            text = "2 PRIORITY";
+            text = "$STR_AWARE_TAB_PRIORITY";
             x = "safezoneX + 0.139";
         };
 
         class AWARE_MedExtTab3 : AWARE_MedExtTab1
         {
             idc = 5206;
-            text = "3 ITEMS";
+            text = "$STR_AWARE_TAB_ITEMS";
             x = "safezoneX + 0.254";
         };
 
         class AWARE_MedExtTab4 : AWARE_MedExtTab1
         {
             idc = 5207;
-            text = "4 RECHECK";
+            text = "$STR_AWARE_TAB_RECHECK";
             x = "safezoneX + 0.369";
+        };
+
+        class AWARE_MedExtPageUp : AWARE_RscText
+        {
+            idc = 5208;
+            style = 2;
+            text = "$STR_AWARE_SCROLL_UP";
+            x = "safezoneX + 0.024";
+            y = "safezoneY + 0.778 * safezoneH";
+            w = "0.218";
+            h = "0.026";
+            colorBackground[] = {0.08, 0.08, 0.08, 0.92};
+            SizeEx = "0.0175 * safezoneH";
+        };
+
+        class AWARE_MedExtPageDown : AWARE_MedExtPageUp
+        {
+            idc = 5209;
+            text = "$STR_AWARE_SCROLL_DOWN";
+            x = "safezoneX + 0.258";
         };
 
         class AWARE_MedExtScrollGroup : AWARE_RscControlsGroup

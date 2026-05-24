@@ -98,10 +98,17 @@ private _fnc_partSummary = {
     private _hasFracture = _state param [3, false];
     private _hasTourniquet = _state param [4, false];
     private _openWoundsCount = _state param [6, 0];
+    private _woundDetails = _state param [7, []];
 
     private _requirements = [];
     private _actions = [];
+    private _woundOperations = [];
     private _statusParts = [];
+    private _woundAmountTotal = 0;
+    private _largeWounds = 0;
+    private _mediumWounds = 0;
+    private _bleedingWounds = 0;
+    private _penetratingWounds = 0;
 
     if (_bleedRatio > 0.35) then {
         _statusParts pushBack "heavy bleeding";
@@ -128,6 +135,44 @@ private _fnc_partSummary = {
     if (_openWoundsCount > 0) then {
         _statusParts pushBack format ["open wound/gunshot x%1", _openWoundsCount];
     };
+
+    {
+        _x params ["_woundName", "_woundSize", "_amount", "_bleeding", "_damage", "_woundCategory"];
+
+        private _operationPrefix = _woundName;
+        private _woundNameLower = toLower _woundName;
+        _woundAmountTotal = _woundAmountTotal + _amount;
+        if (_woundCategory >= 2) then {
+            _largeWounds = _largeWounds + 1;
+        } else {
+            if (_woundCategory == 1) then {
+                _mediumWounds = _mediumWounds + 1;
+            };
+        };
+        if (_bleeding > 0.01) then {
+            _bleedingWounds = _bleedingWounds + 1;
+        };
+        if (("velocity" in _woundNameLower) || { "puncture" in _woundNameLower } || { "avulsion" in _woundNameLower }) then {
+            _penetratingWounds = _penetratingWounds + 1;
+        };
+
+        switch (true) do {
+            case (_bleeding > 0.35 || { _woundCategory >= 2 }): {
+                _woundOperations pushBack format ["%1: pack wound with Packing Bandage or QuikClot.", _operationPrefix];
+                _woundOperations pushBack format ["%1: secure with Elastic Bandage and recheck bleeding.", _operationPrefix];
+            };
+            case (_bleeding > 0.01): {
+                _woundOperations pushBack format ["%1: bandage and recheck until bleeding stops.", _operationPrefix];
+            };
+            default {
+                _woundOperations pushBack format ["%1: monitor and reassess.", _operationPrefix];
+            };
+        };
+
+        if (_partType isEqualTo "torso" && { ("velocity" in _woundNameLower) || { "puncture" in _woundNameLower } }) then {
+            _woundOperations pushBack format ["%1: apply chest seal if penetrating torso wound is present.", _operationPrefix];
+        };
+    } forEach _woundDetails;
 
     if (_damageValue > 0.7) then {
         _statusParts pushBack "severe trauma";
@@ -165,15 +210,30 @@ private _fnc_partSummary = {
         _statusParts pushBack "tourniquet applied";
     };
 
-    private _severity = (_bleedRatio * 5) + (_damageValue * 3) + (_openWoundsCount * 0.35);
+    private _isActionable = (_bleedRatio > 0.01) || { _openWoundsCount > 0 } || { _hasFracture } || { _hasTourniquet } || { _partType isEqualTo "head" && { _isUnconscious } };
+    private _severity = (_bleedRatio * 30) + (_damageValue * 8) + (_openWoundsCount * 3) + (_woundAmountTotal * 0.15) + (_largeWounds * 6) + (_mediumWounds * 3) + (_bleedingWounds * 4);
+
+    if (_bleedRatio > 0.35) then {
+        _severity = _severity + 100;
+    } else {
+        if (_bleedRatio > 0.01) then {
+            _severity = _severity + 60;
+        };
+    };
+    if (_partType isEqualTo "torso" && { _penetratingWounds > 0 || { _bleedRatio > 0.01 } }) then {
+        _severity = _severity + 35;
+    };
+    if (_partType isEqualTo "head" && { _isUnconscious || { _damageValue > 0.35 } || { _openWoundsCount > 0 } }) then {
+        _severity = _severity + 30;
+    };
     if (_hasFracture) then {
-        _severity = _severity + 1;
+        _severity = _severity + 12;
     };
     if (_hasTourniquet) then {
-        _severity = _severity + 0.35;
+        _severity = _severity + 3;
     };
 
-    private _isInjured = _severity > 0.05;
+    private _isInjured = _isActionable && { _severity > 0.05 };
     private _status = "stable";
     if (_statusParts isNotEqualTo []) then {
         _status = _statusParts joinString ", ";
@@ -183,7 +243,12 @@ private _fnc_partSummary = {
     if (_actions isNotEqualTo []) then {
         _action = _actions joinString " ";
     };
-    private _operations = +_actions;
+    private _operations = +_woundOperations;
+    {
+        if !(_x in _operations) then {
+            _operations pushBack _x;
+        };
+    } forEach _actions;
     if (_operations isEqualTo []) then {
         _operations pushBack "Monitor and reassess.";
     };
@@ -210,7 +275,8 @@ private _fnc_partSummary = {
         _severity,
         _hasTourniquet,
         _isInjured,
-        _operations
+        _operations,
+        _woundDetails
     ]
 };
 
@@ -263,9 +329,14 @@ private _injuredPartRows = [];
     _injuredPartRows pushBack (_x select 1);
 } forEach _injuryRowsForSort;
 
+private _focusedPartRows = [];
+if (_injuredPartRows isNotEqualTo []) then {
+    _focusedPartRows pushBack (_injuredPartRows select 0);
+};
+
 private _marchLines = [
     _unit,
-    _injuredPartRows,
+    _focusedPartRows,
     _bloodStatus,
     _bloodAction,
     _bloodRequirements,
@@ -275,17 +346,40 @@ private _marchLines = [
     _inventoryItems
 ] call AWARE_fnc_getPriorityMedicalWorkflow;
 
-private _bodyLines = ["<t size='1.12' color='#9AD7FF'>BODY PART CHECKLIST</t>"];
-if (_injuredPartRows isEqualTo []) then {
+private _bodyLines = [format ["<t size='1.12' color='#9AD7FF'>%1</t>", localize "STR_AWARE_BODY_PART_CHECKLIST"]];
+if (_focusedPartRows isEqualTo []) then {
     _bodyLines pushBack "[ ] No wounded body parts currently need checklist actions.";
 } else {
+    private _selectedBodyPartIndex = missionNamespace getVariable ["ace_medical_gui_selectedBodyPart", -1];
+    private _selectedBodyPartNames = ["Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"];
     {
-        _x params ["_name", "_status", "_requirements", "_action", "_color", "_bleedRatio", "_damageValue", "_hasFracture", "_openWoundsCount", "_severity", "_hasTourniquet", "_isInjured", "_operations"];
+        _x params ["_name", "_status", "_requirements", "_action", "_color", "_bleedRatio", "_damageValue", "_hasFracture", "_openWoundsCount", "_severity", "_hasTourniquet", "_isInjured", "_operations", "_woundDetails"];
         private _split = [_requirements] call _fnc_splitRequirements;
         _split params ["_available", "_missing"];
 
+        _bodyLines pushBack format ["<t color='%1'>%2: %3</t>", _color, localize "STR_AWARE_ACTIVE_PRIORITY", toUpper _name];
+        if (_selectedBodyPartIndex >= 0 && { _selectedBodyPartIndex < count _selectedBodyPartNames }) then {
+            private _selectedBodyPartName = _selectedBodyPartNames select _selectedBodyPartIndex;
+            if (_selectedBodyPartName != _name) then {
+                _bodyLines pushBack format ["  - Medical menu selected: %1", _selectedBodyPartName];
+                _bodyLines pushBack "  - AWARE is showing the highest active priority.";
+            };
+        };
+        _bodyLines pushBack format ["  - %1", localize "STR_AWARE_ADVANCE_HINT"];
         _bodyLines pushBack format ["<t align='left' color='%1'>[ ] %2</t>", _color, toUpper _name];
         _bodyLines pushBack format ["  - Status: %1", _status];
+        if (_woundDetails isNotEqualTo []) then {
+            _bodyLines pushBack "  - Wounds:";
+            {
+                _x params ["_woundName", "_woundSize", "_amount"];
+                private _amountText = if (_amount >= 1) then {
+                    format ["%1x", ceil _amount]
+                } else {
+                    "Partial"
+                };
+                _bodyLines pushBack format ["      - %1 %2", _amountText, _woundName];
+            } forEach _woundDetails;
+        };
         _bodyLines pushBack "  - Medical operations:";
         {
             _bodyLines pushBack format ["      [ ] %1", _x];
@@ -297,10 +391,10 @@ if (_injuredPartRows isEqualTo []) then {
             } forEach _available;
         };
         [_bodyLines, _missing] call _fnc_addMissingLines;
-    } forEach _injuredPartRows;
+    } forEach _focusedPartRows;
 };
 
-private _itemLines = ["<t size='1.12' color='#9AD7FF'>ITEMS AVAILABLE / REQUIRED</t>"];
+private _itemLines = [format ["<t size='1.12' color='#9AD7FF'>%1</t>", localize "STR_AWARE_ITEMS_AVAILABLE_REQUIRED"]];
 private _hasItemGuidance = false;
 
 if (_bloodRequirements isNotEqualTo []) then {
@@ -336,14 +430,14 @@ if (_painValue > 0.4) then {
         [_itemLines, _missing] call _fnc_addMissingLines;
         _hasItemGuidance = true;
     };
-} forEach _injuredPartRows;
+} forEach _focusedPartRows;
 
 if (!_hasItemGuidance) then {
     _itemLines pushBack "[ ] No specific medical item requirement detected from current injuries.";
 };
 
 private _recheckLines = [
-    "<t size='1.12' color='#9AD7FF'>REASSESSMENT</t>",
+    format ["<t size='1.12' color='#9AD7FF'>%1</t>", localize "STR_AWARE_REASSESSMENT"],
     "[ ] Recheck bleeding after every bandage or tourniquet.",
     "[ ] Recheck airway and breathing after torso/head treatment.",
     "[ ] Recheck pulse/BP after fluids or blood.",

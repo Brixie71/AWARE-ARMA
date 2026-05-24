@@ -1,6 +1,6 @@
 /*
     Function: AWARE_fnc_getBodyPartStatus
-    Returns [damageRatio, bleedRatio, hasFracture, hasTourniquet, usedAce, openWounds].
+    Returns [damageRatio, bleedRatio, hasFracture, hasTourniquet, usedAce, openWounds, woundDetails].
 */
 
 params [
@@ -10,7 +10,7 @@ params [
     ["_aceBodyPartIndex", -1]
 ];
 
-if (isNull _unit) exitWith { [0, 0, false, false, false, 0] };
+if (isNull _unit) exitWith { [0, 0, false, false, false, 0, []] };
 
 private _isAceLoaded = isClass (configFile >> "CfgPatches" >> "ace_medical");
 private _canUseAce = _isAceLoaded && { _aceBodyPartIndex >= 0 } && { _aceBodyPart != "" };
@@ -20,30 +20,81 @@ if (_canUseAce) then {
     if (_bodyPartDamage isEqualType [] && { count _bodyPartDamage > _aceBodyPartIndex }) then {
         private _fractures = _unit getVariable ["ace_medical_fractures", [0, 0, 0, 0, 0, 0]];
         private _tourniquets = _unit getVariable ["ace_medical_tourniquets", [0, 0, 0, 0, 0, 0]];
+        private _openWoundsContainer = _unit getVariable ["ace_medical_openWounds", createHashMap];
         private _openWounds = [];
-
-        if (!isNil "ace_medical_fnc_getOpenWounds") then {
-            _openWounds = [_unit, _aceBodyPart] call ace_medical_fnc_getOpenWounds;
-        } else {
-            private _openWoundsContainer = _unit getVariable ["ace_medical_openWounds", createHashMap];
-            if (_openWoundsContainer isEqualType createHashMap) then {
-                _openWounds = _openWoundsContainer getOrDefault [toLower _aceBodyPart, []];
-            };
+        if (_openWoundsContainer isEqualType createHashMap) then {
+            _openWounds = _openWoundsContainer getOrDefault [toLower _aceBodyPart, []];
         };
 
         if !(_openWounds isEqualType []) then {
             _openWounds = [];
         };
 
+        private _fnc_woundBaseName = {
+            params ["_className"];
+
+            private _classNameLower = toLower _className;
+            switch (true) do {
+                case ("velocity" in _classNameLower): { "Velocity Wound" };
+                case ("avulsion" in _classNameLower): { "Avulsion" };
+                case ("puncture" in _classNameLower): { "Puncture Wound" };
+                case ("laceration" in _classNameLower): { "Laceration" };
+                case ("crush" in _classNameLower): { "Crush Injury" };
+                case ("cut" in _classNameLower): { "Cut" };
+                case ("abrasion" in _classNameLower): { "Abrasion" };
+                case ("contusion" in _classNameLower): { "Contusion" };
+                default { _className };
+            };
+        };
+
+        private _fnc_decodeWound = {
+            params ["_woundClassId"];
+
+            private _classId = _woundClassId;
+            if !(_classId isEqualType 0) exitWith {
+                private _fallback = str _classId;
+                [_fallback, "", 0, _fallback]
+            };
+
+            private _category = floor (_classId % 10);
+            private _classIndex = floor (_classId / 10);
+            private _suffix = ["Minor", "Medium", "Large"] param [_category, "Minor"];
+            private _woundClassNames = missionNamespace getVariable ["ace_medical_damage_woundClassNames", []];
+            private _className = _woundClassNames param [_classIndex, "Wound"];
+            private _woundNameKey = format ["STR_ACE_medical_damage_%1_%2", _className, _suffix];
+            private _woundName = localize _woundNameKey;
+
+            if (_woundName == "" || { _woundName == _woundNameKey }) then {
+                _woundName = format ["%1 %2", _suffix, [_className] call _fnc_woundBaseName];
+            };
+
+            [_woundName, _suffix, _category, _className]
+        };
+
         private _traumaScore = (_bodyPartDamage param [_aceBodyPartIndex, 0]) max 0;
         private _bleedScore = 0;
         private _woundDamageScore = 0;
+        private _woundDetails = [];
 
         {
             private _amount = (_x param [1, 0]) max 0;
             if (_amount > 0) then {
-                _bleedScore = _bleedScore + ((_x param [2, 0]) max 0) * _amount;
-                _woundDamageScore = _woundDamageScore + ((_x param [3, 0]) max 0) * _amount;
+                private _bleeding = (_x param [2, 0]) max 0;
+                private _damage = (_x param [3, 0]) max 0;
+                _bleedScore = _bleedScore + _bleeding * _amount;
+                _woundDamageScore = _woundDamageScore + _damage * _amount;
+                private _woundInfo = [_x param [0, 0]] call _fnc_decodeWound;
+                _woundInfo params ["_woundName", "_woundSize", "_woundCategory", "_woundClassName"];
+                _woundDetails pushBack [
+                    _woundName,
+                    _woundSize,
+                    _amount,
+                    _bleeding,
+                    _damage,
+                    _woundCategory,
+                    _x param [0, 0],
+                    _woundClassName
+                ];
             };
         } forEach _openWounds;
         private _openWoundsCount = count (_openWounds select { ((_x param [1, 0]) max 0) > 0 });
@@ -99,12 +150,12 @@ if (_canUseAce) then {
         private _bleedRatio = (_bleedScore / 0.5) min 1;
         _damageRatio = (_damageRatio max 0) min 1;
 
-        [_damageRatio, _bleedRatio, _hasFracture, _hasTourniquet, true, _openWoundsCount]
+        [_damageRatio, _bleedRatio, _hasFracture, _hasTourniquet, true, _openWoundsCount, _woundDetails]
     } else {
         private _fallbackDamage = [_unit, _hitpointCandidates] call AWARE_fnc_getBodyPartDamage;
-        [_fallbackDamage, 0, false, false, false, 0]
+        [_fallbackDamage, 0, false, false, false, 0, []]
     };
 } else {
     private _fallbackDamage = [_unit, _hitpointCandidates] call AWARE_fnc_getBodyPartDamage;
-    [_fallbackDamage, 0, false, false, false, 0]
+    [_fallbackDamage, 0, false, false, false, 0, []]
 };

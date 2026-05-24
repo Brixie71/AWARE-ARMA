@@ -14,6 +14,7 @@ private _loopHandle = [] spawn {
 
     private _bodyHudLayer = ["AWARE_BodyHudLayer"] call BIS_fnc_rscLayer;
     private _medicalExtLayer = ["AWARE_MedicalExtLayer"] call BIS_fnc_rscLayer;
+    private _nextBodyUpdate = 0;
 
     while { true } do {
         if (isNull player) then {
@@ -74,10 +75,13 @@ private _loopHandle = [] spawn {
                 };
 
                 private _previousMedicalTarget = uiNamespace getVariable ["AWARE_MedicalSuggestionTarget", objNull];
-                if (_previousMedicalTarget isNotEqualTo _medicalTarget) then {
+                private _targetChanged = _previousMedicalTarget isNotEqualTo _medicalTarget;
+                if (_targetChanged) then {
                     uiNamespace setVariable ["AWARE_MedicalSuggestionTarget", _medicalTarget];
+                    _nextBodyUpdate = 0;
                     if (uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false]) then {
                         uiNamespace setVariable ["AWARE_MedicalSuggestionTab", 0];
+                        uiNamespace setVariable ["AWARE_MedicalSuggestionScrollOffset", 0];
                     };
                 };
 
@@ -86,8 +90,20 @@ private _loopHandle = [] spawn {
                 private _isUnconscious = !_isDead && {
                     (_medicalTarget getVariable ["ACE_isUnconscious", false]) || { _lifeState == "INCAPACITATED" }
                 };
+                private _lifeStateKey = format ["%1:%2:%3", _medicalTarget, _lifeState, _isUnconscious];
+                private _previousLifeStateKey = uiNamespace getVariable ["AWARE_BodyIndicatorLifeStateKey", ""];
+                private _lifeStateChanged = _lifeStateKey != _previousLifeStateKey;
+                if (_lifeStateChanged) then {
+                    uiNamespace setVariable ["AWARE_BodyIndicatorLifeStateKey", _lifeStateKey];
+                    _nextBodyUpdate = 0;
+                };
 
-                [_medicalTarget, _display] call AWARE_fnc_updateBodyIndicator;
+                private _isChecklistVisible = uiNamespace getVariable ["AWARE_MedicalSuggestionsVisible", false];
+                private _refreshInterval = [0.85, 0.15] select (_isMedicalMenuOpen || { _isChecklistVisible });
+                if (diag_tickTime >= _nextBodyUpdate) then {
+                    [_medicalTarget, _display] call AWARE_fnc_updateBodyIndicator;
+                    _nextBodyUpdate = diag_tickTime + _refreshInterval;
+                };
 
                 private _bodyEnabled = missionNamespace getVariable ["AWARE_bodyIndicator_enabled", true];
                 private _bodyVisibility = missionNamespace getVariable ["AWARE_bodyIndicator_visibility", 0];
@@ -147,6 +163,7 @@ private _loopHandle = [] spawn {
                         private _tabIndex = [2, 3, 4, 5] find _dikCode;
                         if (_tabIndex > -1) then {
                             uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionScrollOffset", 0];
                             [true] call AWARE_fnc_renderMedicalSuggestions;
                             true
                         } else {
@@ -173,9 +190,29 @@ private _loopHandle = [] spawn {
 
                         if (_tabIndex > -1) then {
                             uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];
+                            uiNamespace setVariable ["AWARE_MedicalSuggestionScrollOffset", 0];
                             [true] call AWARE_fnc_renderMedicalSuggestions;
                             true
                         } else {
+                            private _scrollButtonRects = uiNamespace getVariable ["AWARE_MedicalSuggestionScrollButtonRects", []];
+                            private _scrollDirection = 0;
+                            {
+                                _x params ["_buttonX", "_buttonY", "_buttonW", "_buttonH", "_direction"];
+                                if (_mouseX >= _buttonX && { _mouseX <= (_buttonX + _buttonW) } && { _mouseY >= _buttonY } && { _mouseY <= (_buttonY + _buttonH) }) exitWith {
+                                    _scrollDirection = _direction;
+                                };
+                            } forEach _scrollButtonRects;
+
+                            if (_scrollDirection != 0) exitWith {
+                                private _scrollOffset = uiNamespace getVariable ["AWARE_MedicalSuggestionScrollOffset", 0];
+                                private _scrollPage = uiNamespace getVariable ["AWARE_MedicalSuggestionScrollPage", 0.2];
+                                private _scrollMax = uiNamespace getVariable ["AWARE_MedicalSuggestionScrollMax", 0];
+                                _scrollOffset = ((_scrollOffset + (_scrollDirection * _scrollPage)) max 0) min _scrollMax;
+                                uiNamespace setVariable ["AWARE_MedicalSuggestionScrollOffset", _scrollOffset];
+                                [true] call AWARE_fnc_renderMedicalSuggestions;
+                                true
+                            };
+
                             private _canDrag = missionNamespace getVariable ["AWARE_medicalSuggestions_draggable", true];
                             private _headerRect = uiNamespace getVariable ["AWARE_MedicalSuggestionHeaderRect", []];
                             if (!_canDrag || { _headerRect isEqualTo [] }) exitWith { false };

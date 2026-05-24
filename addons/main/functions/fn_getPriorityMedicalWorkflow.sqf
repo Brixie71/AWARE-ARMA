@@ -62,7 +62,7 @@ private _fnc_formatRequirementText = {
 };
 
 private _lines = [
-    "<t size='1.14' color='#9AD7FF'>RAPID PRIORITY WORKFLOW</t>",
+    format ["<t size='1.14' color='#9AD7FF'>%1</t>", localize "STR_AWARE_RAPID_PRIORITY_WORKFLOW"],
     "<t color='#F0B45A'>[ ] FLOW</t> Bleed control > Airway > Breathing > Circulation > Reassess"
 ];
 
@@ -77,7 +77,7 @@ if (_isUnconscious) then {
 if (_injuredPartRows isEqualTo []) then {
     _lines pushBack "[ ] No severe wound detected by AWARE. Recheck the medical menu and patient vitals.";
 } else {
-    _lines pushBack "<t size='1.08' color='#9AD7FF'>SEVERE WOUNDS FIRST</t>";
+    _lines pushBack format ["<t size='1.08' color='#9AD7FF'>%1</t>", localize "STR_AWARE_ACTIVE_PRIORITY"];
 
     private _stepNumber = 1;
     {
@@ -106,7 +106,7 @@ if (_bloodRequirements isNotEqualTo []) then {
         _itemText = " | " + _requirementText;
     };
 
-    _lines pushBack "<t size='1.08' color='#9AD7FF'>AFTER BLEED CONTROL</t>";
+    _lines pushBack format ["<t size='1.08' color='#9AD7FF'>%1</t>", localize "STR_AWARE_AFTER_BLEED_CONTROL"];
     _lines pushBack format ["<t color='#F0B45A'>[ ] VOLUME</t> | %1 | Do: %2%3", _bloodStatus, _bloodAction, _itemText];
 };
 
