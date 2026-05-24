@@ -23,7 +23,7 @@
             <Original>Medical Checklist</Original>
         </Key>
         <Key ID="STR_AWARE_ITEMS_AVAILABLE_REQUIRED">
-            <Original>ITEMS AVAILABLE / REQUIRED</Original>
+            <Original>ITEMS BY BODY PART PRIORITY</Original>
         </Key>
         <Key ID="STR_AWARE_MEDICAL_CHECKLIST">
             <Original>AWARE MEDICAL CHECKLIST</Original>
@@ -83,13 +83,13 @@
             <Original>Scales the checklist panel size.</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_BODY">
-            <Original>1 BODY</Original>
+            <Original>2 BODY</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_ITEMS">
-            <Original>3 ITEMS</Original>
+            <Original>1 ITEMS</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_PRIORITY">
-            <Original>2 PRIORITY</Original>
+            <Original>3 PRIORITY</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_RECHECK">
             <Original>4 RECHECK</Original>

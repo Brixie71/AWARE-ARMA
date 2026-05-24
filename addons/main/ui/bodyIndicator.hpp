@@ -309,7 +309,7 @@ class AWARE_MedicalSuggestionExtension
         {
             idc = 5204;
             style = 2;
-            text = "$STR_AWARE_TAB_BODY";
+            text = "$STR_AWARE_TAB_ITEMS";
             x = "safezoneX + 0.024";
             y = "safezoneY + 0.268 * safezoneH";
             w = "0.109";
@@ -321,14 +321,14 @@ class AWARE_MedicalSuggestionExtension
         class AWARE_MedExtTab2 : AWARE_MedExtTab1
         {
             idc = 5205;
-            text = "$STR_AWARE_TAB_PRIORITY";
+            text = "$STR_AWARE_TAB_BODY";
             x = "safezoneX + 0.139";
         };
 
         class AWARE_MedExtTab3 : AWARE_MedExtTab1
         {
             idc = 5206;
-            text = "$STR_AWARE_TAB_ITEMS";
+            text = "$STR_AWARE_TAB_PRIORITY";
             x = "safezoneX + 0.254";
         };
 

@@ -1,9 +1,17 @@
 /*
     Function: AWARE_fnc_getMedicalTarget
-    Returns the patient currently selected by the medical menu or aimed at by the player.
+    Returns the patient currently selected by the medical menu.
 */
 
 if (!hasInterface) exitWith { objNull };
+
+disableSerialization;
+
+private _aceMedicalMenuDisplay = findDisplay 38580;
+private _aceMedicalMenuDisplayNs = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
+private _isMedicalMenuOpen = (!isNull _aceMedicalMenuDisplay) || { !isNull _aceMedicalMenuDisplayNs };
+
+if (!_isMedicalMenuOpen) exitWith { player };
 
 private _target = objNull;
 private _medicalTargets = [
@@ -18,15 +26,6 @@ private _medicalTargets = [
         _target = _x;
     };
 } forEach _medicalTargets;
-
-if (isNull _target) then {
-    private _cursorTargets = [cursorTarget, cursorObject];
-    {
-        if (isNull _target && { !isNull _x } && { _x isKindOf "CAManBase" } && { _x distance player <= 12 }) then {
-            _target = _x;
-        };
-    } forEach _cursorTargets;
-};
 
 if (isNull _target) then {
     player

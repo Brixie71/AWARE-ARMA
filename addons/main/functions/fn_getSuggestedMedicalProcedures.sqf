@@ -9,20 +9,22 @@ params [
 ];
 
 if (isNull _unit) exitWith {
+    uiNamespace setVariable ["AWARE_MedicalSuggestionFocusedBodyPartIndex", -1];
     [
+        ["ITEMS", ["[ ] No item guidance available."]],
         ["BODY", ["<t color='#F0B45A'>NO PATIENT DATA</t>", "[ ] No patient selected."]],
         ["PRIORITY", ["[ ] Reopen medical menu after selecting patient."]],
-        ["ITEMS", ["[ ] No item guidance available."]],
         ["RECHECK", ["[ ] Select patient and reopen medical menu."]]
     ]
 };
 
 private _isAceLoaded = isClass (configFile >> "CfgPatches" >> "ace_medical");
 if (!_isAceLoaded) exitWith {
+    uiNamespace setVariable ["AWARE_MedicalSuggestionFocusedBodyPartIndex", -1];
     [
+        ["ITEMS", ["[ ] Use unit standard medical kit."]],
         ["BODY", ["<t color='#F0B45A'>MEDICAL SYSTEM</t>", "[ ] No advanced body-state data."]],
         ["PRIORITY", ["[ ] Advanced medical data not detected.", "[ ] Follow your unit treatment SOP."]],
-        ["ITEMS", ["[ ] Use unit standard medical kit."]],
         ["RECHECK", ["[ ] Reassess manually."]]
     ]
 };
@@ -81,6 +83,20 @@ private _fnc_addMissingLines = {
     } forEach _missing;
 };
 
+private _fnc_addItemGuidance = {
+    params ["_availableItems", "_missingItems", "_displayName", "_classCandidates"];
+
+    if ([_classCandidates] call _fnc_hasAnyItem) then {
+        if !(_displayName in _availableItems) then {
+            _availableItems pushBack _displayName;
+        };
+    } else {
+        if !(_displayName in _missingItems) then {
+            _missingItems pushBack _displayName;
+        };
+    };
+};
+
 private _fnc_findPartState = {
     params ["_sourceLabel", "_statePool"];
 
@@ -90,7 +106,7 @@ private _fnc_findPartState = {
 };
 
 private _fnc_partSummary = {
-    params ["_displayName", "_sourceLabel", "_partType", "_statePool", "_isUnconscious"];
+    params ["_displayName", "_sourceLabel", "_partType", "_statePool", "_isUnconscious", ["_aceBodyPartIndex", -1]];
 
     private _state = [_sourceLabel, _statePool] call _fnc_findPartState;
     private _damageValue = _state param [1, 0];
@@ -276,7 +292,9 @@ private _fnc_partSummary = {
         _hasTourniquet,
         _isInjured,
         _operations,
-        _woundDetails
+        _woundDetails,
+        _aceBodyPartIndex,
+        _partType
     ]
 };
 
@@ -309,17 +327,17 @@ switch (true) do {
 
 private _injuryRowsForSort = [];
 {
-    private _row = [_x select 0, _x select 1, _x select 2, _partStates, _isUnconscious] call _fnc_partSummary;
+    private _row = [_x select 0, _x select 1, _x select 2, _partStates, _isUnconscious, _x select 3] call _fnc_partSummary;
     if (_row param [11, false]) then {
         _injuryRowsForSort pushBack [(_row param [9, 0]), _row];
     };
 } forEach [
-    ["Head", "Head", "head"],
-    ["Torso", "Torso", "torso"],
-    ["Left Arm", "Left Hand", "arm"],
-    ["Right Arm", "Right Hand", "arm"],
-    ["Left Foot", "Left Leg", "leg"],
-    ["Right Foot", "Right Leg", "leg"]
+    ["Head", "Head", "head", 0],
+    ["Torso", "Torso", "torso", 1],
+    ["Left Arm", "Left Hand", "arm", 2],
+    ["Right Arm", "Right Hand", "arm", 3],
+    ["Left Leg", "Left Leg", "leg", 4],
+    ["Right Leg", "Right Leg", "leg", 5]
 ];
 
 _injuryRowsForSort sort false;
@@ -333,6 +351,12 @@ private _focusedPartRows = [];
 if (_injuredPartRows isNotEqualTo []) then {
     _focusedPartRows pushBack (_injuredPartRows select 0);
 };
+
+private _focusedBodyPartIndex = -1;
+if (_focusedPartRows isNotEqualTo []) then {
+    _focusedBodyPartIndex = (_focusedPartRows select 0) param [14, -1];
+};
+uiNamespace setVariable ["AWARE_MedicalSuggestionFocusedBodyPartIndex", _focusedBodyPartIndex];
 
 private _marchLines = [
     _unit,
@@ -396,44 +420,58 @@ if (_focusedPartRows isEqualTo []) then {
 
 private _itemLines = [format ["<t size='1.12' color='#9AD7FF'>%1</t>", localize "STR_AWARE_ITEMS_AVAILABLE_REQUIRED"]];
 private _hasItemGuidance = false;
-
-if (_bloodRequirements isNotEqualTo []) then {
-    private _split = [_bloodRequirements] call _fnc_splitRequirements;
-    _split params ["_available", "_missing"];
-    _itemLines pushBack format ["<t color='#F0B45A'>[ ] Blood volume:</t> %1", _bloodStatus];
-    _itemLines pushBack format ["    - Procedure: %1", _bloodAction];
-    if (_available isNotEqualTo []) then {
-        _itemLines pushBack format ["    - Use from kit: %1", _available joinString ", "];
-    };
-    [_itemLines, _missing] call _fnc_addMissingLines;
-    _hasItemGuidance = true;
-};
-
-if (_isLosingBlood) then {
-    _itemLines pushBack "[ ] Active bleed: control bleeding before volume replacement.";
-    _hasItemGuidance = true;
-};
-if (_painValue > 0.4) then {
-    _itemLines pushBack "[ ] Pain: treat per SOP after life threats are stable.";
-    _hasItemGuidance = true;
-};
+private _ivRequired = _bloodRequirements isNotEqualTo [];
+private _ivClassCandidates = ["ACE_bloodIV", "ACE_bloodIV_500", "ACE_bloodIV_250", "ACE_plasmaIV", "ACE_plasmaIV_500", "ACE_plasmaIV_250", "ACE_salineIV", "ACE_salineIV_500", "ACE_salineIV_250", "kat_bloodIV_O", "kat_bloodIV_A", "kat_bloodIV_B", "kat_bloodIV_AB"];
+private _painClassCandidates = ["ACE_morphine", "kat_Painkiller", "kat_nalbuphine"];
 
 {
-    _x params ["_name", "_status", "_requirements", "_action", "_color"];
-    if (_requirements isNotEqualTo []) then {
-        private _split = [_requirements] call _fnc_splitRequirements;
-        _split params ["_available", "_missing"];
-        _itemLines pushBack format ["<t color='%1'>[ ] %2:</t> %3", _color, _name, _status];
-        if (_available isNotEqualTo []) then {
-            _itemLines pushBack format ["    - Use from kit: %1", _available joinString ", "];
+    private _name = _x param [0, ""];
+    private _requirements = _x param [2, []];
+    private _color = _x param [4, "#9BE28F"];
+    private _rowIndex = _forEachIndex;
+    private _availableItems = [];
+    private _missingItems = [];
+
+    {
+        _x params ["_displayName", "_classCandidates"];
+        [_availableItems, _missingItems, _displayName, _classCandidates] call _fnc_addItemGuidance;
+    } forEach _requirements;
+
+    if (_painValue > 0.4 && { _rowIndex == 0 }) then {
+        [_availableItems, _missingItems, "Painkillers", _painClassCandidates] call _fnc_addItemGuidance;
+    };
+
+    if (_ivRequired && { _rowIndex == 0 }) then {
+        [_availableItems, _missingItems, "IV Blood / Fluid", _ivClassCandidates] call _fnc_addItemGuidance;
+    };
+
+    if (_availableItems isNotEqualTo [] || { _missingItems isNotEqualTo [] }) then {
+        _itemLines pushBack format ["<t color='%1'>%2</t>", _color, toUpper _name];
+        _itemLines pushBack "  (Medical items to use in sequence)";
+        {
+            _itemLines pushBack format ["      [ ] %1", _x];
+        } forEach _availableItems;
+
+        if (_missingItems isNotEqualTo []) then {
+            _itemLines pushBack format ["      - <t color='#F06A5A'>Required Items: %1</t>", _missingItems joinString ", "];
         };
-        [_itemLines, _missing] call _fnc_addMissingLines;
+
         _hasItemGuidance = true;
     };
-} forEach _focusedPartRows;
+} forEach _injuredPartRows;
+
+if (!_hasItemGuidance && { _ivRequired }) then {
+    _itemLines pushBack "<t color='#F0B45A'>CIRCULATION</t>";
+    if ([_ivClassCandidates] call _fnc_hasAnyItem) then {
+        _itemLines pushBack "      [ ] IV Blood / Fluid";
+    } else {
+        _itemLines pushBack "      - <t color='#F06A5A'>Required Items: IV Blood / Fluid</t>";
+    };
+    _hasItemGuidance = true;
+};
 
 if (!_hasItemGuidance) then {
-    _itemLines pushBack "[ ] No specific medical item requirement detected from current injuries.";
+    _itemLines pushBack "[ ] No body-part item requirement detected from current injuries.";
 };
 
 private _recheckLines = [
@@ -447,8 +485,8 @@ private _recheckLines = [
 ];
 
 [
+    ["ITEMS", _itemLines],
     ["BODY", _bodyLines],
     ["PRIORITY", _marchLines],
-    ["ITEMS", _itemLines],
     ["RECHECK", _recheckLines]
 ]
