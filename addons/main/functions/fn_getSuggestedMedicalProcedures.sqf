@@ -381,14 +381,8 @@ if (_focusedPartRows isEqualTo []) then {
         private _split = [_requirements] call _fnc_splitRequirements;
         _split params ["_available", "_missing"];
 
-        _bodyLines pushBack format ["<t color='%1'>%2: %3</t>", _color, localize "STR_AWARE_ACTIVE_PRIORITY", toUpper _name];
-        if (_selectedBodyPartIndex >= 0 && { _selectedBodyPartIndex < count _selectedBodyPartNames }) then {
-            private _selectedBodyPartName = _selectedBodyPartNames select _selectedBodyPartIndex;
-            if (_selectedBodyPartName != _name) then {
-                _bodyLines pushBack format ["  - Medical menu selected: %1", _selectedBodyPartName];
-                _bodyLines pushBack "  - AWARE is showing the highest active priority.";
-            };
-        };
+        _bodyLines pushBack format ["<t color='%1'>★ %2: %3</t>", _color, localize "STR_AWARE_ACTIVE_PRIORITY", toUpper _name];
+        _bodyLines pushBack format ["<t color='%1'>  ► Recommended: Treat this body part first ◄</t>", _color];
         _bodyLines pushBack format ["  - %1", localize "STR_AWARE_ADVANCE_HINT"];
         _bodyLines pushBack format ["<t align='left' color='%1'>[ ] %2</t>", _color, toUpper _name];
         _bodyLines pushBack format ["  - Status: %1", _status];
@@ -424,6 +418,12 @@ private _ivRequired = _bloodRequirements isNotEqualTo [];
 private _ivClassCandidates = ["ACE_bloodIV", "ACE_bloodIV_500", "ACE_bloodIV_250", "ACE_plasmaIV", "ACE_plasmaIV_500", "ACE_plasmaIV_250", "ACE_salineIV", "ACE_salineIV_500", "ACE_salineIV_250", "kat_bloodIV_O", "kat_bloodIV_A", "kat_bloodIV_B", "kat_bloodIV_AB"];
 private _painClassCandidates = ["ACE_morphine", "kat_Painkiller", "kat_nalbuphine"];
 
+/* Get priority body part name for item highlighting */
+private _priorityBodyPartName = "";
+if (_focusedPartRows isNotEqualTo []) then {
+    _priorityBodyPartName = _focusedPartRows select 0 param [0, ""];
+};
+
 {
     private _name = _x param [0, ""];
     private _requirements = _x param [2, []];
@@ -431,6 +431,7 @@ private _painClassCandidates = ["ACE_morphine", "kat_Painkiller", "kat_nalbuphin
     private _rowIndex = _forEachIndex;
     private _availableItems = [];
     private _missingItems = [];
+    private _isPriority = (_name isEqualTo _priorityBodyPartName);
 
     {
         _x params ["_displayName", "_classCandidates"];
@@ -446,10 +447,16 @@ private _painClassCandidates = ["ACE_morphine", "kat_Painkiller", "kat_nalbuphin
     };
 
     if (_availableItems isNotEqualTo [] || { _missingItems isNotEqualTo [] }) then {
-        _itemLines pushBack format ["<t color='%1'>%2</t>", _color, toUpper _name];
-        _itemLines pushBack "  (Medical items to use in sequence)";
+        private _priorityMarker = ["", "★ "] select (_isPriority);
+        _itemLines pushBack format ["<t color='%1'>%2%3</t>", _color, _priorityMarker, toUpper _name];
+        if (_isPriority) then {
+            _itemLines pushBack "  ► Use these items now ◄";
+        } else {
+            _itemLines pushBack "  (Use after priority treatment)";
+        };
+        _itemLines pushBack "      [ ] Available:";
         {
-            _itemLines pushBack format ["      [ ] %1", _x];
+            _itemLines pushBack format ["            [ ] %1", _x];
         } forEach _availableItems;
 
         if (_missingItems isNotEqualTo []) then {

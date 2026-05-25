@@ -47,7 +47,7 @@ _scale = (_scale max 0.85) min 1.25;
 
 private _defaultPosition = [safeZoneX + 0.02, safeZoneY + (0.23 * safeZoneH)];
 private _panelPosition = uiNamespace getVariable ["AWARE_MedicalSuggestionPosition", _defaultPosition];
-if !(_panelPosition isEqualType []) then {
+if (_panelPosition isEqualType []) then {
     _panelPosition = _defaultPosition;
 };
 

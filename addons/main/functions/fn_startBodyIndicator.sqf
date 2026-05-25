@@ -105,15 +105,7 @@ private _loopHandle = [] spawn {
                     _nextBodyUpdate = diag_tickTime + _refreshInterval;
                 };
 
-                if (_isMedicalMenuOpen) then {
-                    private _focusedBodyPartIndex = uiNamespace getVariable ["AWARE_MedicalSuggestionFocusedBodyPartIndex", -1];
-                    if (_focusedBodyPartIndex >= 0 && { _focusedBodyPartIndex <= 5 }) then {
-                        private _selectedBodyPartIndex = missionNamespace getVariable ["ace_medical_gui_selectedBodyPart", -1];
-                        if (_selectedBodyPartIndex != _focusedBodyPartIndex) then {
-                            missionNamespace setVariable ["ace_medical_gui_selectedBodyPart", _focusedBodyPartIndex];
-                        };
-                    };
-                };
+                /* Priority selection is now indicated in the checklist, not forced in KAT */
 
                 private _bodyEnabled = missionNamespace getVariable ["AWARE_bodyIndicator_enabled", true];
                 private _bodyVisibility = missionNamespace getVariable ["AWARE_bodyIndicator_visibility", 0];
