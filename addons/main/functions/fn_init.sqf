@@ -4,4 +4,4 @@
 */
 
 [] call AWARE_fnc_hello;
-[] call AWARE_fnc_startBodyIndicator;
+[] call AWARE_fnc_startMedicalSuggestions;

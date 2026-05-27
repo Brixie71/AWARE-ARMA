@@ -7,11 +7,8 @@ if (!hasInterface) exitWith { objNull };
 
 disableSerialization;
 
-private _aceMedicalMenuDisplay = findDisplay 38580;
-private _aceMedicalMenuDisplayNs = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
-private _isMedicalMenuOpen = (!isNull _aceMedicalMenuDisplay) || { !isNull _aceMedicalMenuDisplayNs };
-
-if (!_isMedicalMenuOpen) exitWith { player };
+private _medicalMenuDisplay = [] call AWARE_fnc_getMedicalMenuDisplay;
+if (isNull _medicalMenuDisplay) exitWith { player };
 
 private _target = objNull;
 private _medicalTargets = [
@@ -22,7 +19,7 @@ private _medicalTargets = [
 ];
 
 {
-    if (isNull _target && { !isNull _x } && { _x isKindOf "CAManBase" }) then {
+    if (!isNull _x && { _x isKindOf "CAManBase" }) exitWith {
         _target = _x;
     };
 } forEach _medicalTargets;

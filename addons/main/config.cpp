@@ -29,16 +29,12 @@ class CfgFunctions
 
             class hello {};
             class vrHello {};
-            class getBodyPartDamage {};
-            class getBodyPartStatus {};
-            class startBodyIndicator {};
-            class setBodyIndicatorVisible {};
-            class updateBodyIndicator {};
-            class onBodyPartHover {};
-            class onBodyPartHoverExit {};
+            class getMedicalMenuDisplay {};
+            class getMedicInventoryItems {};
+            class startMedicalSuggestions {};
             class getMedicalTarget {};
-            class getPriorityMedicalWorkflow {};
             class getSuggestedMedicalProcedures {};
+            class registerMedicalSuggestionInput {};
             class renderMedicalSuggestions {};
             class registerSettings
             {
@@ -50,5 +46,5 @@ class CfgFunctions
 
 class RscTitles
 {
-    #include "ui\bodyIndicator.hpp"
+    #include "ui\medicalSuggestion.hpp"
 };

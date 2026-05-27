@@ -42,6 +42,16 @@ private _pageDownControl = _display displayCtrl 5209;
 
 if (isNull _backgroundControl || { isNull _headerControl } || { isNull _scrollGroup } || { isNull _bodyControl } || { isNull _hintControl }) exitWith {};
 
+private _fnc_showControls = {
+    params ["_controls", "_visible"];
+
+    {
+        if (!isNull _x) then {
+            _x ctrlShow _visible;
+        };
+    } forEach _controls;
+};
+
 private _scale = missionNamespace getVariable ["AWARE_medicalSuggestions_scale", 1];
 _scale = (_scale max 0.85) min 1.25;
 
@@ -107,46 +117,29 @@ if (!isNull _pageDownControl) then {
 };
 uiNamespace setVariable ["AWARE_MedicalSuggestionScrollButtonRects", _scrollButtonRects];
 
+private _panelControls = [
+    _backgroundControl,
+    _headerControl,
+    _scrollGroup,
+    _bodyControl,
+    _hintControl
+] + _tabControls + [
+    _pageUpControl,
+    _pageDownControl
+];
+
 if (!_isVisible) exitWith {
     uiNamespace setVariable ["AWARE_MedicalSuggestionDragging", false];
-    _backgroundControl ctrlShow false;
-    _headerControl ctrlShow false;
-    _scrollGroup ctrlShow false;
-    _bodyControl ctrlShow false;
-    _hintControl ctrlShow false;
-    {
-        if (!isNull _x) then {
-            _x ctrlShow false;
-        };
-    } forEach _tabControls;
-    if (!isNull _pageUpControl) then {
-        _pageUpControl ctrlShow false;
-    };
-    if (!isNull _pageDownControl) then {
-        _pageDownControl ctrlShow false;
-    };
+    [_panelControls, false] call _fnc_showControls;
 };
 
-_backgroundControl ctrlShow true;
-_headerControl ctrlShow true;
-_scrollGroup ctrlShow true;
-_bodyControl ctrlShow true;
+[_panelControls, true] call _fnc_showControls;
 _hintControl ctrlShow false;
-{
-    if (!isNull _x) then {
-        _x ctrlShow true;
-    };
-} forEach _tabControls;
-if (!isNull _pageUpControl) then {
-    _pageUpControl ctrlShow true;
-};
-if (!isNull _pageDownControl) then {
-    _pageDownControl ctrlShow true;
-};
 
-private _tabs = uiNamespace getVariable ["AWARE_MedicalSuggestionLines", [["MARCH", ["No suggestion data yet."]]]];
+private _fallbackTabs = [["NOW", ["No suggestion data yet."]]];
+private _tabs = uiNamespace getVariable ["AWARE_MedicalSuggestionLines", _fallbackTabs];
 if !(_tabs isEqualType []) then {
-    _tabs = [["MARCH", ["No suggestion data yet."]]];
+    _tabs = _fallbackTabs;
 };
 
 private _activeTab = uiNamespace getVariable ["AWARE_MedicalSuggestionTab", 0];
@@ -167,7 +160,7 @@ if (_lastActiveTab != _activeTab) then {
     };
 } forEach _tabControls;
 
-private _activeEntry = _tabs param [_activeTab, ["MARCH", ["No suggestion data yet."]]];
+private _activeEntry = _tabs param [_activeTab, ["NOW", ["No suggestion data yet."]]];
 private _lines = _activeEntry param [1, ["No suggestion data yet."]];
 if !(_lines isEqualType []) then {
     _lines = ["No suggestion data yet."];

@@ -1,44 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project name="AWARE">
     <Package name="Main">
-        <Key ID="STR_AWARE_ACTIVE_PRIORITY">
-            <Original>ACTIVE PRIORITY</Original>
-        </Key>
-        <Key ID="STR_AWARE_ADVANCE_HINT">
-            <Original>Treat this body part until stable. AWARE will advance to the next priority automatically.</Original>
-        </Key>
-        <Key ID="STR_AWARE_AFTER_BLEED_CONTROL">
-            <Original>AFTER BLEED CONTROL</Original>
-        </Key>
-        <Key ID="STR_AWARE_BODY_PART_CHECKLIST">
-            <Original>BODY PART CHECKLIST</Original>
-        </Key>
-        <Key ID="STR_AWARE_BODY_TITLE">
-            <Original>AWARE BODY</Original>
-        </Key>
-        <Key ID="STR_AWARE_CATEGORY_BODY_INDICATOR">
-            <Original>Body Indicator</Original>
-        </Key>
         <Key ID="STR_AWARE_CATEGORY_MEDICAL_CHECKLIST">
             <Original>Medical Checklist</Original>
         </Key>
-        <Key ID="STR_AWARE_ITEMS_AVAILABLE_REQUIRED">
-            <Original>ITEMS BY BODY PART PRIORITY</Original>
-        </Key>
         <Key ID="STR_AWARE_MEDICAL_CHECKLIST">
             <Original>AWARE MEDICAL CHECKLIST</Original>
-        </Key>
-        <Key ID="STR_AWARE_OPTION_ALWAYS_ON">
-            <Original>Always On</Original>
-        </Key>
-        <Key ID="STR_AWARE_OPTION_MEDICAL_MENU_ONLY">
-            <Original>Medical Menu Only</Original>
-        </Key>
-        <Key ID="STR_AWARE_RAPID_PRIORITY_WORKFLOW">
-            <Original>RAPID PRIORITY WORKFLOW</Original>
-        </Key>
-        <Key ID="STR_AWARE_REASSESSMENT">
-            <Original>REASSESSMENT</Original>
         </Key>
         <Key ID="STR_AWARE_SCROLL_DOWN">
             <Original>DOWN</Original>
@@ -58,18 +25,6 @@
         <Key ID="STR_AWARE_SETTING_AUTO_SHOW_DESC">
             <Original>Automatically opens the checklist panel when the medical menu opens.</Original>
         </Key>
-        <Key ID="STR_AWARE_SETTING_BODY_VISIBILITY">
-            <Original>AWARE BODY Visibility</Original>
-        </Key>
-        <Key ID="STR_AWARE_SETTING_BODY_VISIBILITY_DESC">
-            <Original>Controls whether AWARE BODY is always visible or only visible while the medical menu is open.</Original>
-        </Key>
-        <Key ID="STR_AWARE_SETTING_ENABLE_BODY">
-            <Original>Enable AWARE BODY</Original>
-        </Key>
-        <Key ID="STR_AWARE_SETTING_ENABLE_BODY_DESC">
-            <Original>Shows or hides the AWARE BODY status panel.</Original>
-        </Key>
         <Key ID="STR_AWARE_SETTING_ENABLE_CHECKLIST">
             <Original>Enable Checklist</Original>
         </Key>
@@ -82,17 +37,17 @@
         <Key ID="STR_AWARE_SETTING_UI_SCALE_DESC">
             <Original>Scales the checklist panel size.</Original>
         </Key>
-        <Key ID="STR_AWARE_TAB_BODY">
-            <Original>2 BODY</Original>
+        <Key ID="STR_AWARE_TAB_FIRST">
+            <Original>2 FIRST</Original>
         </Key>
-        <Key ID="STR_AWARE_TAB_ITEMS">
-            <Original>1 ITEMS</Original>
-        </Key>
-        <Key ID="STR_AWARE_TAB_PRIORITY">
-            <Original>3 PRIORITY</Original>
+        <Key ID="STR_AWARE_TAB_NOW">
+            <Original>1 NOW</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_RECHECK">
             <Original>4 RECHECK</Original>
+        </Key>
+        <Key ID="STR_AWARE_TAB_TRANSPORT">
+            <Original>3 TRANS</Original>
         </Key>
     </Package>
 </Project>
