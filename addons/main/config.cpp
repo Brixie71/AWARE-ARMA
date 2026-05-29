@@ -34,6 +34,7 @@ class CfgFunctions
             class startMedicalSuggestions {};
             class getMedicalTarget {};
             class getSuggestedMedicalProcedures {};
+            class registerMedicalTreatmentTracking {};
             class registerMedicalSuggestionInput {};
             class renderMedicalSuggestions {};
             class registerSettings

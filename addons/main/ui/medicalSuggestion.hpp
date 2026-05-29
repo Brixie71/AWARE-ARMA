@@ -152,15 +152,8 @@ class AWARE_MedicalSuggestionExtension
         class AWARE_MedExtTab2 : AWARE_MedExtTab1
         {
             idc = 5205;
-            text = "$STR_AWARE_TAB_TRANSPORT";
-            x = "safezoneX + 0.139";
-        };
-
-        class AWARE_MedExtTab3 : AWARE_MedExtTab1
-        {
-            idc = 5206;
             text = "$STR_AWARE_TAB_RECHECK";
-            x = "safezoneX + 0.254";
+            x = "safezoneX + 0.139";
         };
 
         class AWARE_MedExtPageUp : AWARE_RscText

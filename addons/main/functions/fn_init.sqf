@@ -4,4 +4,5 @@
 */
 
 [] call AWARE_fnc_hello;
+[] call AWARE_fnc_registerMedicalTreatmentTracking;
 [] call AWARE_fnc_startMedicalSuggestions;

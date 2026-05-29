@@ -34,7 +34,7 @@ private _tabEh = _tabDisplay displayAddEventHandler ["KeyDown", {
 
     if !(missionNamespace getVariable ["AWARE_medicalSuggestions_enabled", true]) exitWith { false };
 
-    private _tabKeys = [2, 3, 4];
+    private _tabKeys = [2, 3];
     private _tabIndex = _tabKeys find _dikCode;
     if (_tabIndex > -1) then {
         uiNamespace setVariable ["AWARE_MedicalSuggestionTab", _tabIndex];

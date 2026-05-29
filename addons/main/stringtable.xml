@@ -2,10 +2,10 @@
 <Project name="AWARE">
     <Package name="Main">
         <Key ID="STR_AWARE_CATEGORY_MEDICAL_CHECKLIST">
-            <Original>Medical Checklist</Original>
+            <Original>First Aid Checklist</Original>
         </Key>
         <Key ID="STR_AWARE_MEDICAL_CHECKLIST">
-            <Original>AWARE MEDICAL CHECKLIST</Original>
+            <Original>FIRST AID CHECKLIST</Original>
         </Key>
         <Key ID="STR_AWARE_SCROLL_DOWN">
             <Original>DOWN</Original>
@@ -38,13 +38,10 @@
             <Original>Scales the checklist panel size.</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_NOW">
-            <Original>1 NOW</Original>
+            <Original>FIRST AID</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_RECHECK">
-            <Original>3 RECHECK</Original>
-        </Key>
-        <Key ID="STR_AWARE_TAB_TRANSPORT">
-            <Original>2 TRANS</Original>
+            <Original>VITALS</Original>
         </Key>
     </Package>
 </Project>

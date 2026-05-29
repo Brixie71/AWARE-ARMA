@@ -33,8 +33,7 @@ private _bodyControl = if (!isNull _scrollGroup) then {
 private _hintControl = _display displayCtrl 5203;
 private _tabControls = [
     _display displayCtrl 5204,
-    _display displayCtrl 5205,
-    _display displayCtrl 5206
+    _display displayCtrl 5205
 ];
 private _pageUpControl = _display displayCtrl 5208;
 private _pageDownControl = _display displayCtrl 5209;
@@ -136,7 +135,7 @@ if (!_isVisible) exitWith {
 [_panelControls, true] call _fnc_showControls;
 _hintControl ctrlShow false;
 
-private _fallbackTabs = [["NOW", ["No suggestion data yet."]]];
+private _fallbackTabs = [["FIRST AID", ["No suggestion data yet."]]];
 private _tabs = uiNamespace getVariable ["AWARE_MedicalSuggestionLines", _fallbackTabs];
 if !(_tabs isEqualType []) then {
     _tabs = _fallbackTabs;
@@ -162,7 +161,7 @@ if (_lastActiveTab != _activeTab) then {
     };
 } forEach _tabControls;
 
-private _activeEntry = _tabs param [_activeTab, ["NOW", ["No suggestion data yet."]]];
+private _activeEntry = _tabs param [_activeTab, ["FIRST AID", ["No suggestion data yet."]]];
 private _lines = _activeEntry param [1, ["No suggestion data yet."]];
 if !(_lines isEqualType []) then {
     _lines = ["No suggestion data yet."];
