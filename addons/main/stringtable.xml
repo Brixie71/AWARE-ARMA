@@ -37,17 +37,14 @@
         <Key ID="STR_AWARE_SETTING_UI_SCALE_DESC">
             <Original>Scales the checklist panel size.</Original>
         </Key>
-        <Key ID="STR_AWARE_TAB_FIRST">
-            <Original>2 FIRST</Original>
-        </Key>
         <Key ID="STR_AWARE_TAB_NOW">
             <Original>1 NOW</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_RECHECK">
-            <Original>4 RECHECK</Original>
+            <Original>3 RECHECK</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_TRANSPORT">
-            <Original>3 TRANS</Original>
+            <Original>2 TRANS</Original>
         </Key>
     </Package>
 </Project>

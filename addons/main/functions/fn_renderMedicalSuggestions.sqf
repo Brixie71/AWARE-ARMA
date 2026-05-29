@@ -34,8 +34,7 @@ private _hintControl = _display displayCtrl 5203;
 private _tabControls = [
     _display displayCtrl 5204,
     _display displayCtrl 5205,
-    _display displayCtrl 5206,
-    _display displayCtrl 5207
+    _display displayCtrl 5206
 ];
 private _pageUpControl = _display displayCtrl 5208;
 private _pageDownControl = _display displayCtrl 5209;
@@ -75,7 +74,8 @@ private _contentX = _panelX + _padX;
 private _contentY = _panelY + (0.072 * safeZoneH * _scale);
 private _contentW = _panelW - (2 * _padX);
 private _contentH = _panelH - (_contentY - _panelY) - _footerH - (0.006 * safeZoneH * _scale);
-private _tabW = (_contentW - (3 * _tabGap)) / 4;
+private _tabCount = count _tabControls;
+private _tabW = (_contentW - (((_tabCount - 1) max 0) * _tabGap)) / (_tabCount max 1);
 private _scrollButtonGap = 0.006 * _scale;
 private _scrollButtonY = _panelY + _panelH - _footerH;
 private _scrollButtonH = 0.026 * safeZoneH * _scale;
@@ -143,7 +143,9 @@ if !(_tabs isEqualType []) then {
 };
 
 private _activeTab = uiNamespace getVariable ["AWARE_MedicalSuggestionTab", 0];
-_activeTab = (_activeTab max 0) min 3;
+private _maxActiveTab = ((count _tabs) - 1) min (_tabCount - 1);
+_maxActiveTab = _maxActiveTab max 0;
+_activeTab = (_activeTab max 0) min _maxActiveTab;
 private _lastActiveTab = uiNamespace getVariable ["AWARE_MedicalSuggestionLastTab", -1];
 if (_lastActiveTab != _activeTab) then {
     uiNamespace setVariable ["AWARE_MedicalSuggestionLastTab", _activeTab];
@@ -167,7 +169,7 @@ if !(_lines isEqualType []) then {
 };
 
 private _lineHeight = 0.036 * safeZoneH;
-if (_activeTab in [0, 1]) then {
+if (_activeTab == 0) then {
     _lineHeight = 0.033 * safeZoneH;
 };
 

@@ -9,8 +9,7 @@ params [
 
 if (isNull _unit) exitWith {
     [
-        ["NOW", ["[ ] No patient selected."]],
-        ["FIRST", ["[ ] Select a patient and reopen the medical menu."]],
+        ["NOW", ["[ ] No patient selected.", "[ ] Select a patient and reopen the medical menu."]],
         ["TRANSPORT", ["[ ] No transport guidance available."]],
         ["RECHECK", ["[ ] No recheck guidance available."]]
     ]
@@ -132,12 +131,17 @@ if (!_isAceLoaded) exitWith {
         "[ ] Treat obvious bleeding, airway, and shock per SOP."
     ];
     [_nowLines, _basicRequirements] call _fnc_addNowRequirementLines;
+    _nowLines pushBack "<t size='1.12' color='#9AD7FF'>ON SCENE</t>";
+    _nowLines pushBack "Scan casualties. Treat lifesaving threats only.";
+    _nowLines pushBack "Order: M bleed, A airway, R breathing, C shock, H cover.";
+    _nowLines pushBack "[ ] Triage casualties.";
+    _nowLines pushBack "[ ] Treat lifesaving threats only.";
+    _nowLines pushBack "[ ] Mark and move to the next patient.";
 
     [
         ["NOW", _nowLines],
-        ["FIRST", ["<t size='1.12' color='#9AD7FF'>FIRST - ON SCENE</t>", "[ ] Triage casualties.", "[ ] Treat lifesaving threats only.", "[ ] Mark and move to the next patient."]],
         ["TRANSPORT", ["<t size='1.12' color='#9AD7FF'>TRANS - EN ROUTE</t>", "[ ] Keep treatments in place.", "[ ] Recheck pulse, breathing, and bleeding after movement."]],
-        ["RECHECK", ["<t size='1.12' color='#9AD7FF'>RECHECK</t>", "[ ] Reassess manually.", "[ ] Confirm required supplies before handoff."]]
+        ["RECHECK", ["<t size='1.12' color='#9AD7FF'>RECHECK</t>", "[ ] Response: unknown", "[ ] Pain: unknown", "[ ] Heart Rate: unknown", "[ ] Oxygen in the Blood SPO2: unknown", "[ ] Blood: unknown"]]
     ]
 };
 
@@ -245,32 +249,27 @@ if (_isDead) then {
     };
 };
 
-private _firstLines = [
-    "<t size='1.12' color='#9AD7FF'>FIRST - ON SCENE</t>",
-    "Scan casualties. Treat lifesaving threats only.",
-    "Order: M bleed, A airway, R breathing, C shock, H cover."
-];
+_nowLines pushBack "<t size='1.12' color='#9AD7FF'>ON SCENE</t>";
+_nowLines pushBack "Scan casualties. Treat lifesaving threats only.";
+_nowLines pushBack "Order: M bleed, A airway, R breathing, C shock, H cover.";
 
 if (_isCardiacArrest) then {
-    _firstLines pushBack "[ ] Begin CPR.";
+    _nowLines pushBack "[ ] Begin CPR.";
 };
 if (_isBleeding) then {
-    _firstLines pushBack "[ ] Control active bleeding.";
-    [_firstLines, _bleedRequirements] call _fnc_addUseMissingLines;
+    _nowLines pushBack "[ ] Control active bleeding.";
 };
 if (_isUnconscious) then {
-    _firstLines pushBack "[ ] Open airway and monitor breathing.";
-    [_firstLines, _airwayRequirements] call _fnc_addUseMissingLines;
+    _nowLines pushBack "[ ] Open airway and monitor breathing.";
 };
 if (_ivRequired) then {
-    _firstLines pushBack format ["[ ] Treat shock: %1.", _bloodStatus];
-    [_firstLines, _ivRequirements, "    ", _patientAppliedTreatments] call _fnc_addUseMissingLines;
+    _nowLines pushBack format ["[ ] Treat shock: %1.", _bloodStatus];
 };
 if (!_isCardiacArrest && { !_isBleeding } && { !_isUnconscious } && { !_ivRequired }) then {
-    _firstLines pushBack "[ ] No urgent ACE status detected.";
-    _firstLines pushBack "[ ] Check pulse, blood pressure, pain, and responsiveness.";
+    _nowLines pushBack "[ ] No urgent ACE status detected.";
+    _nowLines pushBack "[ ] Check pulse, blood pressure, pain, and responsiveness.";
 };
-_firstLines pushBack "[ ] Cover casualty and prepare movement.";
+_nowLines pushBack "[ ] Cover casualty and prepare movement.";
 
 private _transportLines = [
     "<t size='1.12' color='#9AD7FF'>TRANS - EN ROUTE</t>",
@@ -290,27 +289,47 @@ if (_ivRequired) then {
 };
 _transportLines pushBack "[ ] Keep warm. Tell MEDEVAC what was done and missing.";
 
-private _heartRateText = if (_heartRate >= 0) then {
-    format ["Heart rate: %1", round _heartRate]
+private _responseStatus = "Responsive";
+if (_isDead) then {
+    _responseStatus = "Dead";
 } else {
-    "Heart rate: unknown"
+    if (_isUnconscious) then {
+        _responseStatus = "Unresponsive";
+    };
 };
+private _responseText = format ["Response: %1", _responseStatus];
 private _painText = format ["Pain: %1%2", round (_painValue * 100), "%"];
+private _heartRateText = if (_heartRate >= 0) then {
+    format ["Heart Rate: %1", round _heartRate]
+} else {
+    "Heart Rate: unknown"
+};
+private _spo2Value = -1;
+{
+    private _candidateSpo2 = _unit getVariable [_x, -1];
+    if (_candidateSpo2 isEqualType 0 && { _candidateSpo2 >= 0 }) exitWith {
+        _spo2Value = _candidateSpo2;
+    };
+} forEach ["kat_breathing_spO2", "kat_breathing_spo2", "kat_vitals_spO2", "kat_vitals_spo2", "ace_medical_spO2", "ace_medical_spo2"];
+private _spo2Text = if (_spo2Value >= 0) then {
+    private _spo2Percent = [_spo2Value, _spo2Value * 100] select (_spo2Value <= 1);
+    format ["Oxygen in the Blood SPO2: %1%2", round _spo2Percent, "%"]
+} else {
+    "Oxygen in the Blood SPO2: unknown"
+};
 private _bloodText = format ["Blood: %1", _bloodStatus];
 
 private _recheckLines = [
     "<t size='1.12' color='#9AD7FF'>RECHECK</t>",
-    format ["[ ] %1", _heartRateText],
-    format ["[ ] %1", _bloodText],
+    format ["[ ] %1", _responseText],
     format ["[ ] %1", _painText],
-    "[ ] Confirm bleeding remains controlled.",
-    "[ ] Confirm airway and breathing.",
-    "[ ] Update handoff notes before transport."
+    format ["[ ] %1", _heartRateText],
+    format ["[ ] %1", _spo2Text],
+    format ["[ ] %1", _bloodText]
 ];
 
 [
     ["NOW", _nowLines],
-    ["FIRST", _firstLines],
     ["TRANSPORT", _transportLines],
     ["RECHECK", _recheckLines]
 ]

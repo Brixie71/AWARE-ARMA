@@ -20,20 +20,25 @@ _bleeding > 0
    - Stops all bleeding from that limb
    - Prevents circulation to distal limb
 
-2. **Hemostatic gauze/Bandage** (for smaller wounds)
-   - Applies direct pressure
-   - Slows or stops bleeding depending on severity
-   - Casualty can move with bandage
+2. **For Fractures, Apply Splint** (for Fractures)
+   - Apply Splint After Tournique
+   - Apply Splint before adding Bandages 
 
 3. **Wound packing** (for deep cavitary wounds)
    - Manual packing of wound with gauze
    - More time-intensive
    - Most effective for complex wounds
 
+4. **Hemostatic gauze/Bandage** (for smaller wounds)
+   - Applies direct pressure
+   - Slows or stops bleeding depending on severity
+   - Casualty can move with bandage
+
 **Implementation approach**:
 - Check which body part is bleeding
 - Assess bleeding severity
-- Select appropriate tool (tourniquet for severe limb, bandage for minor)
+- Select appropriate tool (tourniquet for active Bleeding, before applying Bandages, either Packing, Elastic, quicloth, Bandage)
+- For Fractures, Apply Splint (If there is a Fracture)
 - Apply and verify bleeding stops
 
 ---
@@ -53,12 +58,13 @@ _canBreathe = _consciousness >= 0.5
    - Place casualty in recovery position
    - Gravity helps keep airway open
 
-2. **Clear obstruction** (Foreign body removal)
+2. **Clear Occlution/Obstruction** (Foreign body removal) 
    - Remove blood, vomit, or debris from mouth
    - Allows air passage
 
 3. **Airway devices** (Oral/nasal airway)
-   - Insert airway adjunct
+   - Insert airway Adjunct
+      - Additional Requirement after Airway Adjunct
    - Maintains airway patency mechanically
 
 4. **Oxygen** (If available)
@@ -230,4 +236,4 @@ _hypothermic = _coreTemp < 32 // Celsius
 - [ ] Shock treated with fluids; vital signs stabilizing
 - [ ] Hypothermia prevented through insulation
 
-Once all MARCH points are addressed, casualty is stabilized for evacuation.
+
