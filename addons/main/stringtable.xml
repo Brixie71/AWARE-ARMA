@@ -4,14 +4,20 @@
         <Key ID="STR_AWARE_CATEGORY_MEDICAL_CHECKLIST">
             <Original>First Aid Checklist</Original>
         </Key>
+        <Key ID="STR_AWARE_MEDICAL_APPLIED">
+            <Original>Applied</Original>
+        </Key>
         <Key ID="STR_AWARE_MEDICAL_CHECKLIST">
             <Original>FIRST AID CHECKLIST</Original>
         </Key>
+        <Key ID="STR_AWARE_MEDICAL_REQUIRED">
+            <Original>Required</Original>
+        </Key>
         <Key ID="STR_AWARE_SCROLL_DOWN">
-            <Original>DOWN</Original>
+            <Original>SCROLL</Original>
         </Key>
         <Key ID="STR_AWARE_SCROLL_UP">
-            <Original>UP</Original>
+            <Original>SCROLL</Original>
         </Key>
         <Key ID="STR_AWARE_SETTING_ALLOW_DRAGGING">
             <Original>Allow Dragging</Original>
@@ -38,10 +44,10 @@
             <Original>Scales the checklist panel size.</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_NOW">
-            <Original>FIRST AID</Original>
+            <Original>TREATMENT</Original>
         </Key>
         <Key ID="STR_AWARE_TAB_RECHECK">
-            <Original>VITALS</Original>
+            <Original>ASSESSMENT</Original>
         </Key>
     </Package>
 </Project>

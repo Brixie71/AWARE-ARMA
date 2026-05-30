@@ -23,6 +23,7 @@ if (_forceVisible isEqualType true) then {
 };
 
 private _backgroundControl = _display displayCtrl 5200;
+private _shadowControl = _display displayCtrl 5206;
 private _headerControl = _display displayCtrl 5201;
 private _scrollGroup = _display displayCtrl 5199;
 private _bodyControl = if (!isNull _scrollGroup) then {
@@ -35,6 +36,7 @@ private _tabControls = [
     _display displayCtrl 5204,
     _display displayCtrl 5205
 ];
+private _separatorControl = _display displayCtrl 5207;
 private _pageUpControl = _display displayCtrl 5208;
 private _pageDownControl = _display displayCtrl 5209;
 
@@ -53,7 +55,7 @@ private _fnc_showControls = {
 private _scale = missionNamespace getVariable ["AWARE_medicalSuggestions_scale", 1];
 _scale = (_scale max 0.85) min 1.25;
 
-private _defaultPosition = [safeZoneX + 0.02, safeZoneY + (0.23 * safeZoneH)];
+private _defaultPosition = [safeZoneX + 0.02, safeZoneY + (0.20 * safeZoneH)];
 private _panelPosition = uiNamespace getVariable ["AWARE_MedicalSuggestionPosition", _defaultPosition];
 if (_panelPosition isEqualType []) then {
     _panelPosition = _defaultPosition;
@@ -61,31 +63,43 @@ if (_panelPosition isEqualType []) then {
 
 private _panelX = _panelPosition param [0, _defaultPosition select 0];
 private _panelY = _panelPosition param [1, _defaultPosition select 1];
-private _panelW = 0.46 * _scale;
-private _panelH = 0.58 * safeZoneH * _scale;
-private _padX = 0.004 * _scale;
-private _headerH = 0.034 * _scale;
-private _tabGap = 0.006 * _scale;
-private _tabY = _panelY + (0.038 * safeZoneH * _scale);
-private _tabH = 0.028 * _scale;
-private _footerH = 0.034 * safeZoneH * _scale;
+private _panelW = 0.42 * _scale;
+private _panelH = 0.52 * safeZoneH * _scale;
+private _padX = 0.006 * _scale;
+private _headerH = 0.038 * _scale;
+private _tabGap = 0.008 * _scale;
+private _tabY = _panelY + _headerH + (0.004 * safeZoneH * _scale);
+private _tabH = 0.030 * _scale;
+private _footerH = 0.038 * safeZoneH * _scale;
+private _separatorY = _tabY + _tabH + (0.002 * safeZoneH * _scale);
+private _separatorH = 0.0015 * _scale;
+private _shadowOffsetX = 0.002 * _scale;
+private _shadowOffsetY = 0.004 * safeZoneH * _scale;
 private _contentX = _panelX + _padX;
-private _contentY = _panelY + (0.072 * safeZoneH * _scale);
+private _contentY = _separatorY + (0.004 * safeZoneH * _scale);
 private _contentW = _panelW - (2 * _padX);
-private _contentH = _panelH - (_contentY - _panelY) - _footerH - (0.006 * safeZoneH * _scale);
+private _contentH = _panelH - (_contentY - _panelY) - _footerH - (0.008 * safeZoneH * _scale);
 private _tabCount = count _tabControls;
 private _tabW = (_contentW - (((_tabCount - 1) max 0) * _tabGap)) / (_tabCount max 1);
-private _scrollButtonGap = 0.006 * _scale;
-private _scrollButtonY = _panelY + _panelH - _footerH;
-private _scrollButtonH = 0.026 * safeZoneH * _scale;
+private _scrollButtonGap = 0.008 * _scale;
+private _scrollButtonY = _panelY + _panelH - _footerH + (0.004 * safeZoneH * _scale);
+private _scrollButtonH = 0.028 * safeZoneH * _scale;
 private _scrollButtonW = (_contentW - _scrollButtonGap) / 2;
 
+if (!isNull _shadowControl) then {
+    _shadowControl ctrlSetPosition [_panelX + _shadowOffsetX, _panelY + _shadowOffsetY, _panelW, _panelH];
+    _shadowControl ctrlCommit 0;
+};
 _backgroundControl ctrlSetPosition [_panelX, _panelY, _panelW, _panelH];
 _backgroundControl ctrlCommit 0;
 _headerControl ctrlSetPosition [_panelX, _panelY, _panelW, _headerH];
 _headerControl ctrlCommit 0;
 _scrollGroup ctrlSetPosition [_contentX, _contentY, _contentW, _contentH];
 _scrollGroup ctrlCommit 0;
+if (!isNull _separatorControl) then {
+    _separatorControl ctrlSetPosition [_contentX, _separatorY, _contentW, _separatorH];
+    _separatorControl ctrlCommit 0;
+};
 
 private _tabRects = [];
 {
@@ -117,12 +131,14 @@ if (!isNull _pageDownControl) then {
 uiNamespace setVariable ["AWARE_MedicalSuggestionScrollButtonRects", _scrollButtonRects];
 
 private _panelControls = [
+    _shadowControl,
     _backgroundControl,
     _headerControl,
     _scrollGroup,
     _bodyControl,
     _hintControl
 ] + _tabControls + [
+    _separatorControl,
     _pageUpControl,
     _pageDownControl
 ];
@@ -154,9 +170,11 @@ if (_lastActiveTab != _activeTab) then {
 {
     if (!isNull _x) then {
         if (_forEachIndex == _activeTab) then {
-            _x ctrlSetBackgroundColor [0.79, 0.48, 0.08, 0.98];
+            _x ctrlSetBackgroundColor [0.85, 0.70, 0.45, 0.98];
+            _x ctrlSetTextColor [0.20, 0.18, 0.15, 1];
         } else {
-            _x ctrlSetBackgroundColor [0.08, 0.08, 0.08, 0.9];
+            _x ctrlSetBackgroundColor [0.93, 0.90, 0.84, 0.92];
+            _x ctrlSetTextColor [0.50, 0.48, 0.45, 0.85];
         };
     };
 } forEach _tabControls;
@@ -167,9 +185,9 @@ if !(_lines isEqualType []) then {
     _lines = ["No suggestion data yet."];
 };
 
-private _lineHeight = 0.036 * safeZoneH;
+private _lineHeight = 0.032 * safeZoneH;
 if (_activeTab == 0) then {
-    _lineHeight = 0.033 * safeZoneH;
+    _lineHeight = 0.030 * safeZoneH;
 };
 
 private _bodyHeight = (((count _lines) max 1) * _lineHeight) + (0.045 * safeZoneH);
@@ -181,11 +199,16 @@ uiNamespace setVariable ["AWARE_MedicalSuggestionScrollMax", _maxScroll];
 uiNamespace setVariable ["AWARE_MedicalSuggestionScrollPage", (_contentH * 0.75) max (0.1 * safeZoneH)];
 
 private _buttonAlpha = [0.45, 0.92] select (_maxScroll > 0);
+private _buttonAlpha = [0.7, 0.95] select (_maxScroll > 0);
 if (!isNull _pageUpControl) then {
-    _pageUpControl ctrlSetBackgroundColor [0.08, 0.08, 0.08, _buttonAlpha];
+    _pageUpControl ctrlSetText format ["▲ %1", localize "STR_AWARE_SCROLL_UP"];
+    _pageUpControl ctrlSetBackgroundColor [0.93, 0.90, 0.84, _buttonAlpha];
+    _pageUpControl ctrlSetTextColor [0.40, 0.38, 0.35, 0.9];
 };
 if (!isNull _pageDownControl) then {
-    _pageDownControl ctrlSetBackgroundColor [0.08, 0.08, 0.08, _buttonAlpha];
+    _pageDownControl ctrlSetText format ["▼ %1", localize "STR_AWARE_SCROLL_DOWN"];
+    _pageDownControl ctrlSetBackgroundColor [0.93, 0.90, 0.84, _buttonAlpha];
+    _pageDownControl ctrlSetTextColor [0.40, 0.38, 0.35, 0.9];
 };
 
 _bodyControl ctrlSetPosition [0, -_scrollOffset, _contentW - (0.018 * _scale), _bodyHeight];

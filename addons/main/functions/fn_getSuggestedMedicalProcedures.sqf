@@ -116,10 +116,10 @@ private _fnc_formatRequirementName = {
     params ["_displayName", ["_appliedTreatmentKeys", []], ["_isMissing", false]];
 
     if ([_displayName, _appliedTreatmentKeys] call _fnc_isRequirementApplied) then {
-        format ["%1 <t color='#9BE28F'>(Applied)</t>", _displayName]
+        format ["%1 <t color='#8a9a6e'>(%2)</t>", _displayName, localize "STR_AWARE_MEDICAL_APPLIED"]
     } else {
         if (_isMissing) then {
-            format ["%1 <t color='#F06A5A'>(Required)</t>", _displayName]
+            format ["%1 <t color='#c96a5a'>(%2)</t>", _displayName, localize "STR_AWARE_MEDICAL_REQUIRED"]
         } else {
             _displayName
         }
@@ -320,7 +320,9 @@ if (!_isAceLoaded) exitWith {
         "[ ] Use unit standard medical kit.",
         "[ ] Treat obvious bleeding, airway, and shock per SOP."
     ];
+
     [_nowLines, _basicRequirements] call _fnc_addNowRequirementLines;
+    _nowLines pushBack "<t size='1.14' color='#7a7a80' font='PuristaMedium'>FIRST AID</t>";
     _nowLines pushBack "<t size='1.12' color='#9AD7FF'>ON SCENE</t>";
     _nowLines pushBack "Scan casualties. Treat lifesaving threats only.";
     _nowLines pushBack "Order: M bleed, A airway, R breathing, C shock, H cover.";
@@ -328,6 +330,7 @@ if (!_isAceLoaded) exitWith {
     _nowLines pushBack "[ ] Treat lifesaving threats only.";
     _nowLines pushBack "[ ] Mark and move to the next patient.";
 
+    // You need to return the tabs array here
     [
         ["FIRST AID", _nowLines],
         ["VITALS", ["<t size='1.12' color='#9AD7FF'>VITALS</t>", "[ ] Response: unknown", "[ ] Pain: unknown", "[ ] Heart Rate: unknown", "[ ] Blood Pressure: unknown", "[ ] Breathing: unknown", "[ ] Blood: unknown"]]
