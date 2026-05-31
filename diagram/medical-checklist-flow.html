@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AWARE Medical Checklist Recommendation Flow</title>
+    <style>
+        :root {
+            --paper: #f6f4ee;
+            --ink: #2d3438;
+            --muted: #667178;
+            --line: #c7c1b4;
+            --danger: #c75146;
+            --warn: #c8882b;
+            --ok: #5c7f52;
+            --blue: #3f6f8f;
+            --panel: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 28px;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Segoe UI, Arial, sans-serif;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            margin: 0 0 24px;
+            max-width: 880px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            gap: 14px;
+            align-items: stretch;
+            margin-bottom: 28px;
+        }
+
+        .box {
+            min-height: 132px;
+            padding: 16px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .box:not(:last-child)::after {
+            content: ">";
+            position: absolute;
+            top: 50%;
+            right: -13px;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .box h2 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+
+        .box ul {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .march {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .priority {
+            padding: 14px;
+            background: var(--panel);
+            border-radius: 8px;
+            border-top: 5px solid var(--line);
+        }
+
+        .priority strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 18px;
+        }
+
+        .priority span {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .m { border-color: var(--danger); }
+        .a { border-color: var(--warn); }
+        .r { border-color: var(--blue); }
+        .c { border-color: #7d66a3; }
+        .h { border-color: var(--ok); }
+
+        .recommendation {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 18px;
+        }
+
+        .sample {
+            padding: 18px;
+            background: #252a2e;
+            color: #edf1f3;
+            border-radius: 8px;
+            font-family: Consolas, monospace;
+            line-height: 1.55;
+            font-size: 13px;
+        }
+
+        .sample .red { color: #ff8c7f; }
+        .sample .yellow { color: #ffd37c; }
+        .sample .green { color: #9be28f; }
+        .sample .blue { color: #9ad7ff; }
+
+        .legend {
+            padding: 18px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .legend h2 {
+            margin: 0 0 12px;
+            font-size: 18px;
+        }
+
+        .legend p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .pill {
+            display: inline-block;
+            margin: 4px 6px 4px 0;
+            padding: 5px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: #ece7dd;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 18px;
+            }
+
+            .flow,
+            .march,
+            .recommendation {
+                grid-template-columns: 1fr;
+            }
+
+            .box:not(:last-child)::after {
+                content: "v";
+                top: auto;
+                right: 18px;
+                bottom: -16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>AWARE Medical Checklist Recommendation Flow</h1>
+    <p class="subtitle">
+        Simple planning diagram for improving the FIRST AID tab. The goal is live, ACE/KAT-aware recommendations:
+        one highest-priority action at a time, clear item status, and immediate reassessment after treatment.
+    </p>
+
+    <section class="flow" aria-label="Recommendation pipeline">
+        <article class="box">
+            <h2>1. Patient Snapshot</h2>
+            <ul>
+                <li>ACE wounds, bleeding, tourniquets</li>
+                <li>Vitals, pain, cardiac status</li>
+                <li>KAT airway, breathing, IV/IO, meds</li>
+            </ul>
+        </article>
+        <article class="box">
+            <h2>2. Threat Classifier</h2>
+            <ul>
+                <li>MARCH priority order</li>
+                <li>KAT module checks before KAT advice</li>
+                <li>ACE fallback when KAT is absent</li>
+            </ul>
+        </article>
+        <article class="box">
+            <h2>3. Procedure Builder</h2>
+            <ul>
+                <li>One direct action sentence</li>
+                <li>Valid body part and menu route</li>
+                <li>Required item or missing item state</li>
+            </ul>
+        </article>
+        <article class="box">
+            <h2>4. Queue and Indicators</h2>
+            <ul>
+                <li>Actionable first</li>
+                <li>Blocked rows visible</li>
+                <li>Applied rows become follow-up checks</li>
+            </ul>
+        </article>
+        <article class="box">
+            <h2>5. FIRST AID Tab</h2>
+            <ul>
+                <li>Numbered top rows</li>
+                <li>Compact or detailed mode</li>
+                <li>Vitals tab confirms effect</li>
+            </ul>
+        </article>
+    </section>
+
+    <section class="march" aria-label="MARCH priorities">
+        <div class="priority m"><strong>M</strong><span>Massive bleeding: tourniquet, bandage, tourniquet follow-up.</span></div>
+        <div class="priority a"><strong>A</strong><span>Airway: head position, recovery, Guedel/King LT, suction.</span></div>
+        <div class="priority r"><strong>R</strong><span>Respiration: chest seal, decompression when indicated, oxygen, BVM, SpO2.</span></div>
+        <div class="priority c"><strong>C</strong><span>Circulation: IV/IO, fluids/blood, TXA/EACA, cardiac workflow.</span></div>
+        <div class="priority h"><strong>H</strong><span>Hypothermia and follow-up: pain, fractures, surgical stabilization, evacuation.</span></div>
+    </section>
+
+    <section class="recommendation" aria-label="Sample recommendation and indicators">
+        <div class="sample">
+            <span class="blue">FIRST AID</span><br>
+            <span class="red">[1] M - LEFT ARM BLEEDING</span><br>
+            &nbsp;&nbsp;DO: Apply tourniquet, then pack and bandage.<br>
+            &nbsp;&nbsp;ITEM: ACE_tourniquet <span class="green">(available)</span><br>
+            &nbsp;&nbsp;ITEM: Packing Bandage <span class="yellow">(preferred)</span><br>
+            &nbsp;&nbsp;NEXT: Recheck bleeding after action.<br><br>
+            <span class="yellow">[2] A - AIRWAY</span><br>
+            &nbsp;&nbsp;DO: Clear occlusion with suction.<br>
+            &nbsp;&nbsp;ITEM: Accuvac <span class="red">(missing)</span>
+        </div>
+        <div class="legend">
+            <h2>Indicator Direction</h2>
+            <p><span class="pill">Available</span> player has the needed item or no item is needed.</p>
+            <p><span class="pill">Missing</span> keep the row visible, but clearly block execution.</p>
+            <p><span class="pill">Applied</span> convert the treatment into reassessment guidance instead of repeating it.</p>
+            <p><span class="pill">Preferred</span> choose the best inventory match, while allowing fallback items.</p>
+        </div>
+    </section>
+</body>
+</html>
